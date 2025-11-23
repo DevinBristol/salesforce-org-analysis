@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>LastRunHighestCriteria__c</fullName>
+    <description>the highest criteria value so far added. Get it from the bottom row &amp; column of the index of whatever runner specifies as the criteria field.</description>
+    <externalId>false</externalId>
+    <label>Last Run: Highest Criteria</label>
+    <length>255</length>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListView xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>FAILED_TODAY</fullName>
+    <columns>NAME</columns>
+    <columns>Status__c</columns>
+    <columns>TaskId__c</columns>
+    <columns>Voice_Call__c</columns>
+    <columns>OBJECT_ID</columns>
+    <columns>LastError__c</columns>
+    <columns>CREATEDBY_USER</columns>
+    <columns>CREATED_DATE</columns>
+    <columns>LAST_UPDATE</columns>
+    <filterScope>Everything</filterScope>
+    <filters>
+        <field>CREATED_DATE</field>
+        <operation>equals</operation>
+        <value>TODAY</value>
+    </filters>
+    <filters>
+        <field>Status__c</field>
+        <operation>equals</operation>
+        <value>FAILED</value>
+    </filters>
+    <label>FAILED TODAY</label>
+    <sharedTo>
+        <role>Executive</role>
+    </sharedTo>
+</ListView>

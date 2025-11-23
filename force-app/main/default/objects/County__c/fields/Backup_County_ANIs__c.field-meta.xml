@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Backup_County_ANIs__c</fullName>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <description>County to inherit ANI&apos;s from if this County has no active ANIs</description>
+    <externalId>false</externalId>
+    <label>Backup County ANIs</label>
+    <referenceTo>County__c</referenceTo>
+    <relationshipLabel>Counties Inheriting ANI&apos;s</relationshipLabel>
+    <relationshipName>Counties_Inheriting_ANIs</relationshipName>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Lookup</type>
+</CustomField>

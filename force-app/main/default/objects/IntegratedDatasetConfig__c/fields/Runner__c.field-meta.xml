@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Runner__c</fullName>
+    <description>All params needed Retrieve(specify/locate/filter/run) External Database.
+They can deserialize into their respective Manager Class&apos;s runner object.
+//—RUNNER-EXAMPLE–&gt;
+    &apos;Runner&apos;=&gt;new Map&lt;String,Object&gt;{
+        &apos;endGmtStr&apos;=&gt;&apos;2025-10-06T21:14:18.590Z&apos;, &apos;startGmtStr&apos;=&gt;&apos;2025-10-06T22:14:18.590Z&apos;,
+        &apos;folderName&apos;=&gt;&apos;RunnerReports&apos;,&apos;reportName&apos;=&gt;&apos;Call Log Expanded&apos;
+        //&apos;retriever&apos;=&gt;new Five9ReportRetriever(endGmtStr,startGmtStr,folderName,reportName)
+    };</description>
+    <externalId>false</externalId>
+    <label>Runner</label>
+    <length>131072</length>
+    <trackTrending>false</trackTrending>
+    <type>LongTextArea</type>
+    <visibleLines>3</visibleLines>
+</CustomField>

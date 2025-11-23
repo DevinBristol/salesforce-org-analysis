@@ -1,0 +1,352 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionCalls>
+        <name>Send_Email</name>
+        <label>Send Email</label>
+        <locationX>176</locationX>
+        <locationY>782</locationY>
+        <actionName>emailSimple</actionName>
+        <actionType>emailSimple</actionType>
+        <flowTransactionModel>CurrentTransaction</flowTransactionModel>
+        <inputParameters>
+            <name>emailAddresses</name>
+            <value>
+                <elementReference>Select_Email</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>emailSubject</name>
+            <value>
+                <stringValue>Bristol Windows Estimate Confirmation</stringValue>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>emailBody</name>
+            <value>
+                <elementReference>EmailTemplate</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>sendRichBody</name>
+            <value>
+                <booleanValue>true</booleanValue>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>useLineBreaks</name>
+            <value>
+                <booleanValue>true</booleanValue>
+            </value>
+        </inputParameters>
+        <nameSegment>emailSimple</nameSegment>
+    </actionCalls>
+    <apiVersion>63.0</apiVersion>
+    <dynamicChoiceSets>
+        <name>EmailChoices</name>
+        <collectionReference>get_Contacts</collectionReference>
+        <dataType>String</dataType>
+        <displayField>Email</displayField>
+        <object>Contact</object>
+        <valueField>Email</valueField>
+    </dynamicChoiceSets>
+    <dynamicChoiceSets>
+        <name>NameCollection</name>
+        <collectionReference>get_Contacts</collectionReference>
+        <dataType>String</dataType>
+        <displayField>FirstName</displayField>
+        <object>Contact</object>
+        <valueField>FirstName</valueField>
+    </dynamicChoiceSets>
+    <environments>Default</environments>
+    <interviewLabel>Send Appointment Confirmation Email {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Send Appointment Confirmation Email</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>CanvasMode</name>
+        <value>
+            <stringValue>AUTO_LAYOUT_CANVAS</stringValue>
+        </value>
+    </processMetadataValues>
+    <processMetadataValues>
+        <name>OriginBuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>Flow</processType>
+    <recordLookups>
+        <name>get_Contacts</name>
+        <label>get Contacts</label>
+        <locationX>176</locationX>
+        <locationY>242</locationY>
+        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
+        <connector>
+            <targetReference>get_Service_Appointments</targetReference>
+        </connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>AccountId</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>get_Opportunity.AccountId</elementReference>
+            </value>
+        </filters>
+        <getFirstRecordOnly>false</getFirstRecordOnly>
+        <object>Contact</object>
+        <queriedFields>Id</queriedFields>
+        <queriedFields>FirstName</queriedFields>
+        <queriedFields>LastName</queriedFields>
+        <queriedFields>Email</queriedFields>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordLookups>
+    <recordLookups>
+        <name>get_Opportunity</name>
+        <label>get Opportunity</label>
+        <locationX>176</locationX>
+        <locationY>134</locationY>
+        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
+        <connector>
+            <targetReference>get_Contacts</targetReference>
+        </connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Id</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>recordId</elementReference>
+            </value>
+        </filters>
+        <getFirstRecordOnly>true</getFirstRecordOnly>
+        <object>Opportunity</object>
+        <queriedFields>Id</queriedFields>
+        <queriedFields>AccountId</queriedFields>
+        <queriedFields>Opportunity_Property__c</queriedFields>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordLookups>
+    <recordLookups>
+        <name>get_Property</name>
+        <label>get Property</label>
+        <locationX>176</locationX>
+        <locationY>458</locationY>
+        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
+        <connector>
+            <targetReference>Appointment_Details</targetReference>
+        </connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Id</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>get_Opportunity.Opportunity_Property__c</elementReference>
+            </value>
+        </filters>
+        <getFirstRecordOnly>true</getFirstRecordOnly>
+        <object>Property__c</object>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordLookups>
+    <recordLookups>
+        <name>get_Service_Appointments</name>
+        <label>get Service Appointments</label>
+        <locationX>176</locationX>
+        <locationY>350</locationY>
+        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
+        <connector>
+            <targetReference>get_Property</targetReference>
+        </connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>AccountId</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>get_Opportunity.AccountId</elementReference>
+            </value>
+        </filters>
+        <getFirstRecordOnly>true</getFirstRecordOnly>
+        <object>ServiceAppointment</object>
+        <queriedFields>Id</queriedFields>
+        <queriedFields>SchedStartTime</queriedFields>
+        <sortField>SchedStartTime</sortField>
+        <sortOrder>Desc</sortOrder>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordLookups>
+    <screens>
+        <name>Appointment_Details</name>
+        <label>Appointment Details</label>
+        <locationX>176</locationX>
+        <locationY>566</locationY>
+        <allowBack>true</allowBack>
+        <allowFinish>true</allowFinish>
+        <allowPause>true</allowPause>
+        <connector>
+            <targetReference>Email_Templated_Confirmation_Screen</targetReference>
+        </connector>
+        <fields>
+            <name>Appointment_Time</name>
+            <dataType>DateTime</dataType>
+            <defaultValue>
+                <elementReference>get_Service_Appointments.SchedStartTime</elementReference>
+            </defaultValue>
+            <fieldText>Appointment Time</fieldText>
+            <fieldType>InputField</fieldType>
+            <inputsOnNextNavToAssocScrn>UseStoredValues</inputsOnNextNavToAssocScrn>
+            <isRequired>false</isRequired>
+        </fields>
+        <fields>
+            <name>Select_Name</name>
+            <choiceReferences>NameCollection</choiceReferences>
+            <dataType>String</dataType>
+            <fieldText>Select Name</fieldText>
+            <fieldType>DropdownBox</fieldType>
+            <inputsOnNextNavToAssocScrn>UseStoredValues</inputsOnNextNavToAssocScrn>
+            <isRequired>false</isRequired>
+        </fields>
+        <fields>
+            <name>Select_Email</name>
+            <choiceReferences>EmailChoices</choiceReferences>
+            <dataType>String</dataType>
+            <fieldText>Select Email</fieldText>
+            <fieldType>DropdownBox</fieldType>
+            <inputsOnNextNavToAssocScrn>UseStoredValues</inputsOnNextNavToAssocScrn>
+            <isRequired>false</isRequired>
+        </fields>
+        <fields>
+            <name>Appointment_Address</name>
+            <extensionName>flowruntime:address</extensionName>
+            <fieldType>ComponentInstance</fieldType>
+            <inputParameters>
+                <name>addressLabel</name>
+                <value>
+                    <stringValue>Appointment Address</stringValue>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>street</name>
+                <value>
+                    <elementReference>get_Property.Address__Street__s</elementReference>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>city</name>
+                <value>
+                    <elementReference>get_Property.Address__City__s</elementReference>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>province</name>
+                <value>
+                    <elementReference>get_Property.Address__StateCode__s</elementReference>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>postalCode</name>
+                <value>
+                    <elementReference>get_Property.Address__PostalCode__s</elementReference>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>country</name>
+                <value>
+                    <elementReference>get_Property.Address__CountryCode__s</elementReference>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>showAddressLookup</name>
+                <value>
+                    <booleanValue>true</booleanValue>
+                </value>
+            </inputParameters>
+            <inputsOnNextNavToAssocScrn>UseStoredValues</inputsOnNextNavToAssocScrn>
+            <isRequired>true</isRequired>
+            <storeOutputAutomatically>true</storeOutputAutomatically>
+        </fields>
+        <showFooter>true</showFooter>
+        <showHeader>true</showHeader>
+    </screens>
+    <screens>
+        <name>Email_Templated_Confirmation_Screen</name>
+        <label>Email Templated Confirmation Screen</label>
+        <locationX>176</locationX>
+        <locationY>674</locationY>
+        <allowBack>true</allowBack>
+        <allowFinish>true</allowFinish>
+        <allowPause>true</allowPause>
+        <connector>
+            <targetReference>Send_Email</targetReference>
+        </connector>
+        <fields>
+            <name>EmailDisplay</name>
+            <fieldText>&lt;p&gt;{!EmailTemplate}&lt;/p&gt;</fieldText>
+            <fieldType>DisplayText</fieldType>
+        </fields>
+        <showFooter>true</showFooter>
+        <showHeader>true</showHeader>
+    </screens>
+    <start>
+        <locationX>50</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>get_Opportunity</targetReference>
+        </connector>
+    </start>
+    <status>Active</status>
+    <textTemplates>
+        <name>EmailTemplate</name>
+        <isViewedAsPlainText>true</isViewedAsPlainText>
+        <text>&lt;p&gt;Hi {!Select_Name},&lt;/p&gt;
+&lt;p&gt;We’re looking forward to seeing you! Your appointment is scheduled for: &lt;strong&gt;{!Appointment_Time}&lt;/strong&gt; at &lt;strong&gt;{!Appointment_Address.street}&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;p&gt;In the meantime, feel free to visit our website to learn more about what we offer:&lt;/p&gt;
+
+&lt;p&gt;
+  &lt;a href=&quot;https://www.bristolnebraska.com&quot; target=&quot;_blank&quot; style=&quot;display: inline-block; background-color: #0056b3; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;&quot;&gt;
+    Visit Our Website
+  &lt;/a&gt;
+&lt;/p&gt;
+
+&lt;hr style=&quot;margin: 24px 0;&quot; /&gt;
+&lt;h3&gt;⭐ Here&apos;s What Our Clients Say ⭐&lt;/h3&gt;
+&lt;p style=&quot;margin: 16px 0; font-size: 16px;&quot;&gt;
+  ⭐ ⭐ ⭐ ⭐ ⭐ &amp;nbsp; &lt;strong&gt;Rated 4.8 on Google&lt;/strong&gt;
+&lt;/p&gt;
+&lt;ul style=&quot;margin-top: 0;&quot;&gt;
+  &lt;li&gt;&quot;Had Bristol install new windows in our living room and bedroom five years ago and they&apos;re by far my favorite windows! The Bristol team was kind, efficient, and respectful. Very pleased with the work. And when we need windows again, we&apos;ll be calling Bristol.&quot; &lt;strong&gt;- Kayla B. &lt;/strong&gt;&lt;/li&gt;
+  &lt;li&gt;&quot;I had a positive experience with every aspect of the window buying process from Bristol. They listened to my needs, showed up on the scheduled date, and openly communicated with me during the process. Most importantly, two years after having our windows installed I am very pleased with how they look and perform.&quot; &lt;strong&gt;- Kirk G. &lt;/strong&gt;&lt;/li&gt;
+  &lt;li&gt;&quot;We&apos;ve had 10 windows of all styles installed. They&apos;ve cut the wind and noise down tremendously and have never leaked. The noise reduction has helped our kids sleep better and feel safer during wind, snow, and rain storms. They&apos;ve also stayed as nice as the day we had them installed. Thank you for the great product and service.&quot; &lt;strong&gt;- Jesse R. &lt;/strong&gt; &lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;
+  &lt;a href=&quot;https://www.bbb.org/us/ne/lincoln/profile/window-installation/bristol-windows-inc-0714-104009221&quot; target=&quot;_blank&quot; style=&quot;display: inline-block; background-color: #0056b3; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;&quot;&gt;
+    Check out our A+ BBB
+  &lt;/a&gt;
+&lt;/p&gt;
+
+&lt;p&gt;&lt;/p&gt;
+&lt;p style=&quot;color: #888888; font-size: 13px; margin-top: 24px;&quot;&gt; To limit travel, we always call the day before to confirm the appointment. If we are unable to reach you, we will call you another day to reschedule. If you need to reschedule, please call or text 531-500-7290
+&lt;/p&gt;</text>
+    </textTemplates>
+    <variables>
+        <name>EmailToDeliver</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <name>NameToDeliver</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <name>recordId</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>true</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+</Flow>

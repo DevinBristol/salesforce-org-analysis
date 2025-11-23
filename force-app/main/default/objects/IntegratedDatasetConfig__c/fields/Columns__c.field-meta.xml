@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Columns__c</fullName>
+    <description>The retrieved CSV&apos;s top row. Split &amp; serialized as List&lt;String&gt;. Keep format, order, size for parsing.
+—EXAMPLE–&gt;
+new List&lt;String&gt;{&apos;CALL ID&apos;,&apos;TIMESTAMP MILLISECOND&apos;,&apos;salesforce_id&apos;,&apos;CONTACT ID&apos;,&apos;CAMPAIGN TYPE&apos;,&apos;CAMPAIGN&apos;,&apos;CALL TYPE&apos;,&apos;AGENT&apos;,&apos;CUSTOMER NAME&apos;,&apos;ANI&apos;,&apos;DNIS&apos;,&apos;Lead_Status&apos;,&apos;DISPOSITION&apos;,&apos;Last_Dispo&apos;,&apos;COST&apos;,&apos;RATE&apos;,&apos;BILL TIME (ROUNDED)&apos;,&apos;CALL TIME&apos;,&apos;HANDLE TIME&apos;,&apos;TALK TIME&apos;,&apos;MANUAL TIME&apos;,&apos;DIAL TIME&apos;,&apos;PREVIEW TIME&apos;,&apos;RING TIME&apos;,&apos;IVR TIME&apos;,&apos;TALK TIME LESS HOLD AND PARK&apos;,&apos;HOLD TIME&apos;,&apos;PARK TIME&apos;,&apos;AFTER CALL WORK TIME&apos;,&apos;QUEUE WAIT TIME&apos;,&apos;TOTAL QUEUE TIME&apos;,&apos;QUEUE CALLBACK WAIT TIME&apos;,&apos;SPEED OF ANSWER&apos;,&apos;TIME TO ABANDON&apos;,&apos;CALLS&apos;,&apos;CALLS TIMED OUT IN IVR&apos;,&apos;CALLS COMPLETED IN IVR&apos;,&apos;HOLDS&apos;,&apos;PARKS&apos;,&apos;TRANSFERS&apos;,&apos;PREVIEW INTERRUPTED&apos;,&apos;PREVIEW INTERRUPTED BY CALL&apos;,&apos;PREVIEW INTERRUPTED BY SKILL VM&apos;,&apos;DISCONNECTED FROM HOLD&apos;,&apos;IVR PATH&apos;,&apos;SKILL&apos;,&apos;LIST NAME&apos;,&apos;f9_last_list&apos;,&apos;Last_Campaign&apos;,&apos;f9_last_campaign_attempts&apos;,&apos;DIAL RESULT&apos;,&apos;LIVE CONNECT&apos;,&apos;NO PARTY CONTACT&apos;,&apos;CONTACTED&apos;,&apos;SESSION ID&apos;};</description>
+    <externalId>false</externalId>
+    <inlineHelpText>MUST BE IN THE EXACT ORDER, FORMAT &amp; QUANTITY AS THE RETRIEVED CSV&apos;S 1st ROW!</inlineHelpText>
+    <label>Columns</label>
+    <length>32768</length>
+    <trackTrending>false</trackTrending>
+    <type>LongTextArea</type>
+    <visibleLines>40</visibleLines>
+</CustomField>
