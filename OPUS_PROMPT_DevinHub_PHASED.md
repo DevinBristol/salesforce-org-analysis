@@ -13,6 +13,34 @@ You are tasked with creating a **comprehensive, production-ready implementation 
 - Needs unified interface to capture, organize, prioritize, and respond to all inputs
 - Wants conversational AI interface accessible from anywhere
 
+---
+
+## 🎯 EXECUTIVE AUTHORITY: YOU ARE IN CHARGE
+
+**CRITICAL INSTRUCTION**: You (OPUS) have **full executive authority** to make all technical decisions for this implementation. The recommendations in this document are **suggestions only** - you should:
+
+✅ **Override any technology choice** if you know a better solution
+✅ **Ignore specific tool recommendations** (FastAPI, Supabase, Next.js, etc.) if alternatives are superior
+✅ **Make executive decisions** on architecture, frameworks, libraries, and services
+✅ **Choose the best tools available** based on your expertise and current knowledge
+✅ **Deviate from this prompt** whenever you have better ideas
+✅ **Optimize for the stated goals**: Speed to deployment, $500/month budget, 8-12 week timeline, production reliability
+
+**Your priorities:**
+1. **Functional requirements** (integrations, features, AI capabilities) - these are FIXED
+2. **Constraints** (budget, timeline, production data safety) - these are FIXED
+3. **Everything else** (tech stack, architecture patterns, specific tools) - YOUR CHOICE
+
+**Example overrides you're encouraged to make:**
+- "I'm using Go instead of FastAPI because it's better for WebSocket performance"
+- "I'm using Neon instead of Supabase because it has better vector search performance"
+- "I'm using Svelte instead of Next.js because it's faster to build and deploy"
+- "I'm using a different architecture pattern that better suits this use case"
+
+**Trust your judgment.** This document provides context and requirements, but you are the expert architect.
+
+---
+
 ## Two-Phase Strategy
 
 ### PHASE 1 (Implement Now - 8-12 Weeks)
@@ -314,74 +342,82 @@ User currently has NO PM system. Build integrated solution:
 
 ### Infrastructure & Hosting
 
-#### Cloud Platform
-- **Recommendation**: Railway, Render, or Fly.io
-- **Why**: Fast deployment, good DX, scaling, reasonable pricing
-- **Must be**: Always-on for real-time processing
-- **Budget**: $500/month initially (plenty for Phase 1)
+**⚠️ NOTE**: These are **SUGGESTIONS**. Choose whatever hosting and architecture you think is best.
 
-#### Architecture Pattern
-- **Backend**: Monolithic initially, can split into microservices later
-- **Database**: PostgreSQL (relational data) + pgvector (embeddings for RAG)
-- **Real-time**: WebSockets for live updates and voice
-- **Queue**: Background job processing (BullMQ or similar) for async tasks
-- **Storage**: S3-compatible for voice recordings, attachments
+#### Cloud Platform (YOUR CHOICE)
+- **Suggested**: Railway, Render, Fly.io, or Vercel
+- **Why suggested**: Fast deployment, good DX, scaling, reasonable pricing
+- **But feel free to use**: AWS, GCP, Azure, DigitalOcean, Hetzner, Cloudflare, or whatever you prefer
+- **Hard requirements**:
+  - Always-on for real-time processing
+  - Must fit within $500/month budget initially (plenty for Phase 1)
+  - Reliable uptime
+
+#### Architecture Pattern (YOUR CHOICE)
+- **Suggested**: Monolithic initially, can split into microservices later
+- **But feel free to use**: Microservices from start, serverless, edge functions, or whatever architecture you think best balances speed-to-deployment with scalability
+- **Required capabilities**:
+  - PostgreSQL or equivalent (relational data)
+  - Vector search (embeddings for RAG)
+  - Real-time communication (WebSockets, SSE, or equivalent)
+  - Background job processing for async tasks
+  - File storage for voice recordings, attachments (S3-compatible or equivalent)
 
 ### Technology Stack (Phase 1)
 
-#### Backend
-- **Framework**: FastAPI (Python) or NestJS (TypeScript)
-  - Recommendation: **FastAPI** for rapid development and excellent async support
-- **Why**: Native async, good docs, fast, easy integration with AI libraries
+**⚠️ NOTE**: The following are **SUGGESTIONS ONLY**. You (OPUS) should choose whatever stack you believe is best for meeting the functional requirements within budget and timeline constraints. Feel free to completely ignore these recommendations if you have better alternatives.
 
-#### Database
-- **Primary**: PostgreSQL via Supabase
-- **Why Supabase**:
-  - Managed Postgres with pgvector for embeddings
-  - Built-in auth (can use later)
-  - Real-time subscriptions
-  - Fast to set up
-- **Schema**: Detailed schema provided below
+#### Backend (YOUR CHOICE)
+- **Suggested**: FastAPI (Python) or NestJS (TypeScript)
+- **Why suggested**: Native async, good docs, fast, easy integration with AI libraries
+- **But feel free to use**: Go, Rust, Elixir, Java, or whatever you think is best
 
-#### AI/LLM Stack
-- **Primary LLM**: Claude API (Anthropic)
+#### Database (YOUR CHOICE)
+- **Suggested**: PostgreSQL via Supabase
+- **Why suggested**: Managed Postgres with pgvector for embeddings, built-in auth, real-time subscriptions, fast to set up
+- **But feel free to use**: Neon, direct Postgres + pgvector, Pinecone, Qdrant, or whatever you think is best
+- **Required capability**: Vector search for RAG (this is the only hard requirement)
+- **Schema**: Detailed schema provided below as a starting point - modify as needed
+
+#### AI/LLM Stack (MOSTLY FIXED)
+- **Primary LLM**: Claude API (Anthropic) - **REQUIRED** (user specifically wants Claude)
   - **Opus**: Complex reasoning, important responses, learning
   - **Sonnet**: Most responses, classification, extraction (cost/speed balance)
   - **Haiku**: Simple tasks, notifications
-- **Embeddings**: OpenAI `text-embedding-3-small` (cheap, good quality)
-- **Vector Search**: pgvector extension in PostgreSQL
-- **Voice**:
-  - **STT**: OpenAI Whisper API (accurate, fast) or Deepgram (lower latency)
-  - **TTS**: ElevenLabs (most natural) or OpenAI TTS (cheaper, still good)
+- **Embeddings**: OpenAI `text-embedding-3-small` suggested, but use whatever you think is best (Voyage, Cohere, etc.)
+- **Vector Search**: Whatever works with your database choice
+- **Voice** (YOUR CHOICE):
+  - **STT**: OpenAI Whisper, Deepgram, AssemblyAI, or whatever is best for <1s latency
+  - **TTS**: ElevenLabs, OpenAI TTS, Play.ht, or whatever sounds best and fits budget
 
-#### Frontend
-- **Framework**: Next.js 14 (React) with TypeScript
-- **Why**: SSR, excellent PWA support, good DX, large ecosystem
-- **UI Library**: shadcn/ui (Tailwind + Radix) for beautiful, accessible components
-- **State Management**: Zustand (simple, performant)
-- **Real-time**: Socket.io client for WebSocket connections
-- **Voice**: WebRTC for audio capture, Web Audio API
+#### Frontend (YOUR CHOICE)
+- **Suggested**: Next.js 14 (React) with TypeScript
+- **Why suggested**: SSR, excellent PWA support, good DX, large ecosystem
+- **But feel free to use**: SvelteKit, Remix, Astro, Vue/Nuxt, or whatever you think is fastest to build and deploy
+- **UI Library**: shadcn/ui suggested, but use whatever you prefer (Material UI, Chakra, custom, etc.)
+- **State Management**: Your choice (Zustand, Redux, Jotai, Svelte stores, whatever)
+- **Real-time**: Your choice (Socket.io, native WebSockets, SSE, whatever works best)
+- **Voice**: WebRTC + Web Audio API or alternatives
 
-#### Mobile PWA
-- **Built from Next.js**: Same codebase as web dashboard
-- **Progressive**: Service worker for offline, cache
-- **Installable**: Manifest.json for "Add to Home Screen"
-- **Notifications**: Web Push API (works on iOS 16.4+)
+#### Mobile PWA (YOUR CHOICE)
+- **Suggested**: Same codebase as web dashboard (if using responsive framework)
+- **Required**: Must be installable on iPhone, work offline (basic functionality), support push notifications
+- **Implementation**: Your choice on how to achieve this
 
-#### Integration Framework
-- **MCP (Model Context Protocol)**: For each integration where applicable
-- **Structure**: One MCP server per integration (email, calendar, Salesforce, etc.)
-- **Benefits**: Standardized, maintainable, can be used by other Claude instances
+#### Integration Framework (YOUR CHOICE)
+- **Suggested**: MCP (Model Context Protocol) for each integration where applicable
+- **Why suggested**: Standardized, maintainable, can be used by other Claude instances
+- **But feel free to use**: Direct API integrations, Zapier/n8n, custom integration layer, or whatever you think is best
+- **Required**: Must support all 7 integrations in Phase 1
 
-#### Real-time Communication
-- **WebSockets**: Socket.io for backend + frontend
-- **Use cases**:
-  - Live inbox updates when new email/message arrives
-  - Voice streaming (audio chunks)
-  - Notification delivery
-  - Dashboard real-time updates
+#### Real-time Communication (YOUR CHOICE)
+- **Suggested**: WebSockets (Socket.io or native)
+- **Required capability**: Live updates for inbox, voice streaming, notifications
+- **Implementation**: Your choice (WebSockets, SSE, polling, long-polling, whatever)
 
 ### Database Schema (Phase 1)
+
+**⚠️ NOTE**: This schema is a **STARTING POINT**. Feel free to modify, optimize, or completely redesign based on your chosen database and architecture. The important thing is that it supports the functional requirements (contacts, projects, tasks, messages, RAG/vector search, etc.).
 
 ```sql
 -- Contacts: All people
@@ -1439,6 +1475,13 @@ The Phase 1 implementation is successful when:
 
 ## IMPORTANT NOTES FOR OPUS
 
+### Your Role & Authority
+- **You are the technical architect** - make all technology decisions based on your expertise
+- **Override this prompt freely** when you have better ideas
+- **Choose your own stack** - the suggestions here are just starting points
+- **Optimize for the goals**: 8-12 week delivery, $500/month budget, production reliability, user's needs
+
+### Implementation Guidelines
 - This script will be handed to **Claude Code (Sonnet 4.5)** for autonomous execution
 - Be **extremely specific and detailed** - assume Claude Code is capable but needs complete instructions
 - Include all necessary **API documentation references**
@@ -1446,8 +1489,28 @@ The Phase 1 implementation is successful when:
 - Think through **edge cases**: What if email OAuth fails? How to handle rate limits? What if voice STT returns gibberish?
 - Claude Code should be able to execute steps **sequentially without asking questions**
 - If something is ambiguous, provide a **sensible default** and note it in comments
-- Remember: Phase 1 only! Don't implement SMS, voicemail, wake word, or native iOS app yet
+
+### What's Fixed vs. Flexible
+**FIXED (Don't change):**
+- Functional requirements (all integrations, features, AI capabilities listed)
+- Phase 1 vs Phase 2 scope (don't implement Phase 2 features now)
+- Budget constraint ($500/month)
+- Timeline goal (8-12 weeks)
+- Production data safety (review queue, no auto-send)
+- Use of Claude API as primary LLM
+
+**FLEXIBLE (Your choice):**
+- Technology stack (backend, frontend, database, hosting, etc.)
+- Architecture patterns (monolithic vs. microservices, etc.)
+- Specific tools and libraries
+- Implementation approach for each feature
+- Database schema (provided schema is just a suggestion)
+- Development workflow
+
+### Required Deliverables
 - **Generate the Phase 2 Handoff Document** at the end with a complete OPUS prompt for Phase 2
+- Full implementation script that Claude Code can execute
+- Clear justification for your technology choices (helps user understand your decisions)
 
 ---
 
