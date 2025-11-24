@@ -3,6 +3,14 @@
 ## Objective
 Build and deploy a **fully operational autonomous development system** that enables rapid, AI-assisted Salesforce development. This system should be running and usable within 12 hours.
 
+## IMPORTANT: Existing Work Available (But Don't Be Constrained)
+There's an existing attempt at this: https://github.com/DevinBristol/salesforce-ai-agent
+- Built without using official SDKs
+- Has job queue, web UI, Claude integration, metadata caching
+- **Mostly working** but may not be the best approach
+
+**Your mission**: Evaluate this existing solution, but **DO NOT be constrained by it**. Use the BEST tools available (official SDKs, modern frameworks, whatever is optimal). Only leverage the existing solution if it's genuinely the best path forward. Otherwise, build something better.
+
 ## Critical Context: What You're Building FOR (Not What You're Fixing)
 
 ### Business Context
@@ -93,6 +101,7 @@ You have access to:
 - Salesforce production org metadata export (in `/salesforce-org-export/`)
 - CONTEXT.md with business overview
 - A working Salesforce DX project structure
+- Existing salesforce-ai-agent implementation (reference only - use if it's best, ignore if not)
 - Devin's full attention for the next 12 hours to test and refine
 
 ## Success Metrics
