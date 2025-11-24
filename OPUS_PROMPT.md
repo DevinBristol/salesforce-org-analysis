@@ -96,6 +96,48 @@ You have COMPLETE freedom to choose:
 
 **The only constraint**: It must work and be operational in 12 hours.
 
+## Technical Specifications
+
+### Development Environment
+- **Platform**: Windows
+- **Deployment**: Local machine (prioritize fastest setup), cloud deployment is Phase 2
+- **Available Services**:
+  - ClaudeMax20x subscription
+  - Claude API Key
+  - OpenAI API Key
+
+### Salesforce Org Details
+- **Sandboxes Available**:
+  - 10 Developer sandboxes (for isolated testing)
+  - 1 Partial Copy Sandbox (for UAT)
+- **Authentication**: Any method (choose what's most reliable for autonomous operation)
+- **Deployment Pipeline**:
+  1. Develop and test in Developer Sandbox
+  2. Deploy to Partial Copy Sandbox for UAT
+  3. After final review, deploy to Production via change set (human-gated)
+
+### Proof-of-Concept: First Autonomous Task
+**Demo Scenario**: AI agents autonomously identify an isolated Apex class suitable for improvement, score the change risk as low, develop the improvement, push to sandbox for testing, handle any roadblocks autonomously, and escalate to Devin only when blocked.
+
+**Success Criteria**:
+- System identifies a safe target for improvement without human input
+- Generates working code improvement
+- Deploys to sandbox successfully
+- Reports results and any issues encountered
+- Escalates intelligently when truly blocked
+
+### Integration Scope
+- **Phase 1 (Tonight - 12 hours)**: Salesforce-internal automation ONLY
+- **Phase 2 (Later)**: External integrations (CompanyCam, Five9, Birdeye, etc.)
+- **Phase 3 (TBD)**: Advanced features
+
+**Don't try to integrate everything tonight. Prove the core autonomous development loop works.**
+
+### Budget & Infrastructure
+- **Cost**: Unlimited budget, but spending must be efficient
+- **Infrastructure**: Unlimited budget, but spending must be efficient
+- Prefer cost-effective solutions when quality is equivalent
+
 ## Current State
 
 You have access to:
@@ -103,6 +145,7 @@ You have access to:
 - CONTEXT.md with business overview
 - A working Salesforce DX project structure
 - Devin's full attention for the next 12 hours to test and refine
+- Claude API, OpenAI API, and ClaudeMax20x access
 
 ## Success Metrics
 
