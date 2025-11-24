@@ -1,0 +1,37 @@
+{
+  "timestamp": "2025-11-24T03:01:59.246Z",
+  "summary": {
+    "customObjects": 695,
+    "apexClasses": 3934,
+    "apexTriggers": 177,
+    "flows": 290,
+    "totalCustomFields": 0
+  },
+  "complexity": "high",
+  "recommendations": [
+    {
+      "type": "optimization",
+      "priority": "high",
+      "message": "Consider consolidating Apex classes to reduce complexity"
+    },
+    {
+      "type": "governance",
+      "priority": "medium",
+      "message": "High number of flows - implement naming conventions and documentation"
+    }
+  ],
+  "issues": [
+    {
+      "severity": "warning",
+      "type": "test-coverage",
+      "message": "2146 Apex classes may lack test coverage",
+      "affectedComponents": [
+        "sf_devops__CombineWorkItemsUseCase",
+        "clustan__ClusterDataPointNeighbor",
+        "sf_devops__LoadPipelineEnvironmentsUseCase",
+        "sf_devops__AbstractSynchronizer",
+        "FSL__PartialResultsInfo"
+      ]
+    }
+  ]
+}

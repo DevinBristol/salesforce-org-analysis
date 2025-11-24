@@ -1,0 +1,61 @@
+{
+  "name": "salesforce-autonomous-dev-system",
+  "version": "1.0.0",
+  "description": "Autonomous Salesforce Development System powered by AI",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "init-system": "node scripts/init-system.js",
+    "health-check": "node scripts/health-check.js",
+    "task": "node src/cli/submit-task.js",
+    "interactive": "node src/cli/interactive.js",
+    "demo:apex-improvement": "node demos/apex-improvement.js",
+    "batch:analyze": "node demos/batch-analyzer.js",
+    "batch:analyze-deep": "node demos/batch-analyzer.js --analyze-content",
+    "batch:quick": "node demos/batch-analyzer.js --limit 20",
+    "test:improve": "node demos/test-improvement-demo.js --mode=improve",
+    "test:generate": "node demos/test-improvement-demo.js --mode=generate",
+    "test:comprehensive": "node demos/test-improvement-demo.js --mode=comprehensive",
+    "test:analyze": "node demos/test-improvement-demo.js --mode=analyze",
+    "analyze-org": "node scripts/analyze-org.js",
+    "generate-changeset": "node scripts/generate-changeset.js",
+    "deploy:production": "node scripts/deploy-production.js",
+    "logs": "type logs\\system.log",
+    "stop": "node scripts/stop.js",
+    "setup": "node scripts/setup.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.27.0",
+    "@salesforce/cli": "^2.15.0",
+    "chalk": "^5.6.2",
+    "commander": "^12.0.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "fs-extra": "^11.3.2",
+    "inquirer": "^9.2.17",
+    "jsforce": "^1.11.1",
+    "lodash": "^4.17.21",
+    "moment": "^2.30.1",
+    "node-fetch": "^3.3.2",
+    "openai": "^4.38.0",
+    "ora": "^8.2.0",
+    "p-queue": "^8.0.1",
+    "winston": "^3.13.0",
+    "xml2js": "^0.6.2",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "nodemon": "^3.1.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "directories": {
+    "test": "tests"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
