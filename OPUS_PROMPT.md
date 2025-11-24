@@ -86,6 +86,36 @@ By the end of 12 hours, Devin should be able to:
    - How to deploy results
    - How to troubleshoot common issues
 
+## Delivery Format - AI Agent Handoff
+
+**CRITICAL**: Your deliverables will be handed off to Claude Code (an AI CLI agent) for execution and validation.
+
+Structure everything so Claude Code can:
+1. **Read your implementation plan** from the repository
+2. **Execute setup scripts** on Windows with minimal manual intervention
+3. **Run the autonomous development system** you've built
+4. **Validate it's working** by running the demo use case
+5. **Report results** back to Devin
+
+**Requirements for Claude Code compatibility:**
+- All scripts must be executable via bash/PowerShell on Windows
+- Provide a single `IMPLEMENTATION.md` file that Claude Code can read with:
+  - Step-by-step execution instructions
+  - What commands to run in what order
+  - Expected outputs at each step
+  - How to verify success
+- Use relative paths (repo-relative, not absolute paths)
+- Include clear error messages and troubleshooting steps
+- Commit all code to the GitHub repository
+- Assume Claude Code has access to the same API keys (Claude, OpenAI) but will need to be told how to configure them
+
+**Handoff workflow:**
+1. Opus (you) → Commits implementation code and scripts to repo
+2. Claude Code → Reads IMPLEMENTATION.md, executes setup, runs system
+3. Devin → Supervises, provides credentials/approvals when needed
+
+**Make it foolproof** - another AI agent should be able to follow your instructions without human interpretation.
+
 ## Technical Freedom
 
 You have COMPLETE freedom to choose:
