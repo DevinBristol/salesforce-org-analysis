@@ -1,0 +1,34 @@
+{
+  "snapshotId": "snapshot-1764037612397",
+  "deploymentId": "deploy-1764037612396",
+  "targetOrg": "dev-sandbox",
+  "timestamp": "2025-11-25T02:26:52.397Z",
+  "components": [
+    {
+      "type": "ApexClass",
+      "name": "ContactTriggerHandler",
+      "hadExisting": true,
+      "path": "snapshots\\snapshot-1764037612397\\classes\\ContactTriggerHandler.cls",
+      "apiVersion": 62
+    },
+    {
+      "type": "ApexClass",
+      "name": "ContactDMLService",
+      "hadExisting": false,
+      "isNew": true
+    },
+    {
+      "type": "ApexClass",
+      "name": "ContactTriggerHandlerTest",
+      "hadExisting": false,
+      "isNew": true
+    },
+    {
+      "type": "ApexClass",
+      "name": "ContactDMLServiceTest",
+      "hadExisting": false,
+      "isNew": true
+    }
+  ],
+  "status": "created"
+}

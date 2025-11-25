@@ -15,7 +15,6 @@ The Test Improvement System provides AI-powered capabilities to:
 ## Features
 
 ### 1. Test Quality Analysis
-
 - **Bulkification Testing**: Detects tests with 200+ records for governor limits
 - **Assertion Quality**: Identifies meaningless System.assert(true), missing assertions
 - **Test Data Practices**: Checks for hardcoded IDs, SeeAllData=true, @testSetup usage
@@ -25,7 +24,6 @@ The Test Improvement System provides AI-powered capabilities to:
 - **Scoring**: 0-100 quality score with prioritized recommendations
 
 ### 2. Test Refactoring
-
 - **Best Practices**: Add Test.startTest/stopTest, @testSetup, proper assertions
 - **Bulk Testing**: Add 200-record tests for all DML operations
 - **Meaningful Assertions**: Replace System.assert(true) with descriptive assertEquals
@@ -35,7 +33,6 @@ The Test Improvement System provides AI-powered capabilities to:
 - **Collapsible Regions**: Wrap improvements in `//region IMPROVED:` blocks
 
 ### 3. Test Generation
-
 - **Comprehensive Coverage**: Generate tests achieving 100% coverage
 - **All Scenarios**: Positive, negative, edge cases, bulk operations
 - **Smart Analysis**: AI analyzes production code to identify all code paths
@@ -43,7 +40,6 @@ The Test Improvement System provides AI-powered capabilities to:
 - **Full Documentation**: Every test method documented with scenario description
 
 ### 4. Mock Framework
-
 - **HttpCalloutMock**: Generate mocks for REST API testing
 - **StubProvider**: Generate interface mocks with call tracking
 - **Test Data Builders**: Builder pattern classes for SObjects
@@ -52,7 +48,6 @@ The Test Improvement System provides AI-powered capabilities to:
 ## Commands
 
 ### Analyze Test Quality (No Changes)
-
 ```bash
 # Analyze all test classes
 npm run test:analyze
@@ -64,7 +59,6 @@ node demos/test-improvement-demo.js --mode=analyze --class=LeadTriggerHandlerTes
 **Output**: Quality scores, issues breakdown, recommendations (no code changes)
 
 ### Improve Existing Tests
-
 ```bash
 # Improve all test classes
 npm run test:improve
@@ -79,7 +73,6 @@ node demos/test-improvement-demo.js --mode=improve --no-deploy
 **Output**: Refactored test code with best practices, deployed to dev-sandbox
 
 ### Generate New Tests
-
 ```bash
 # Generate tests for all classes with low coverage
 npm run test:generate
@@ -94,7 +87,6 @@ node demos/test-improvement-demo.js --mode=generate --all-classes
 **Output**: New test classes achieving target coverage, deployed to dev-sandbox
 
 ### Comprehensive Mode (Refactor + Generate)
-
 ```bash
 # Full test suite improvement
 npm run test:comprehensive
@@ -110,38 +102,34 @@ node demos/test-improvement-demo.js --mode=comprehensive --no-deploy
 
 ## Command Options
 
-| Option                        | Description                                               | Example                          |
-| ----------------------------- | --------------------------------------------------------- | -------------------------------- |
-| `--mode=<mode>`               | Operation mode: analyze, improve, generate, comprehensive | `--mode=comprehensive`           |
-| `--class=<name>`              | Specific test class to process                            | `--class=LeadTriggerHandlerTest` |
-| `--target-org=<org>`          | Target Salesforce org for deployment                      | `--target-org=dev-sandbox`       |
-| `--target-coverage=<percent>` | Target coverage percentage (default: 100)                 | `--target-coverage=90`           |
-| `--no-deploy`                 | Skip automatic deployment                                 | `--no-deploy`                    |
-| `--all-classes`               | Process all classes, not just critical ones               | `--all-classes`                  |
-| `--no-docs`                   | Skip documentation generation                             | `--no-docs`                      |
+| Option | Description | Example |
+|--------|-------------|---------|
+| `--mode=<mode>` | Operation mode: analyze, improve, generate, comprehensive | `--mode=comprehensive` |
+| `--class=<name>` | Specific test class to process | `--class=LeadTriggerHandlerTest` |
+| `--target-org=<org>` | Target Salesforce org for deployment | `--target-org=dev-sandbox` |
+| `--target-coverage=<percent>` | Target coverage percentage (default: 100) | `--target-coverage=90` |
+| `--no-deploy` | Skip automatic deployment | `--no-deploy` |
+| `--all-classes` | Process all classes, not just critical ones | `--all-classes` |
+| `--no-docs` | Skip documentation generation | `--no-docs` |
 
 ## Usage Examples
 
 ### Example 1: Quick Test Quality Audit
-
 ```bash
 npm run test:analyze
 ```
 
 **Result**:
-
 - Quality scores for all test classes
 - Critical issues identified
 - No code changes made
 
 ### Example 2: Fix Bad Test Practices
-
 ```bash
 npm run test:improve
 ```
 
 **Result**:
-
 - System.assert(true) replaced with meaningful assertions
 - Added bulk testing with 200 records
 - Added Test.startTest/stopTest blocks
@@ -149,25 +137,21 @@ npm run test:improve
 - Deployed to dev-sandbox
 
 ### Example 3: Boost Coverage to 90%
-
 ```bash
 node demos/test-improvement-demo.js --mode=generate --target-coverage=90
 ```
 
 **Result**:
-
 - New test classes generated for classes under 90% coverage
 - Tests cover positive, negative, and edge cases
 - All deployed and ready for validation
 
 ### Example 4: Full Org Test Suite Overhaul
-
 ```bash
 npm run test:comprehensive
 ```
 
 **Result**:
-
 - All existing tests refactored with best practices
 - New tests generated for coverage gaps
 - Full documentation added
@@ -175,13 +159,11 @@ npm run test:comprehensive
 - Comprehensive report generated
 
 ### Example 5: Improve Specific Test Without Deploy
-
 ```bash
 node demos/test-improvement-demo.js --mode=improve --class=AccountTriggerHandlerTest --no-deploy
 ```
 
 **Result**:
-
 - AccountTriggerHandlerTest refactored locally
 - Saved to `./output/test-improvements/AccountTriggerHandlerTest.cls`
 - NOT deployed (review first)
@@ -205,7 +187,6 @@ output/test-improvements/
 ## Salesforce Best Practices Applied
 
 ### 1. Bulkification Testing
-
 ```apex
 @isTest
 static void testBulkInsertSuccess() {
@@ -231,7 +212,6 @@ static void testBulkInsertSuccess() {
 ```
 
 ### 2. Meaningful Assertions
-
 ```apex
 // BAD
 System.assert(true);
@@ -244,7 +224,6 @@ System.assertNotEquals(null, result.opportunityId,
 ```
 
 ### 3. Proper Test Data Setup
-
 ```apex
 @testSetup
 static void setupTestData() {
@@ -270,7 +249,6 @@ static void testProcessAccount() {
 ```
 
 ### 4. HttpCalloutMock Implementation
-
 ```apex
 @isTest
 private class MockHttpResponse implements HttpCalloutMock {
@@ -296,7 +274,6 @@ static void testExternalCallout() {
 ```
 
 ### 5. Negative Testing
-
 ```apex
 @isTest
 static void testInvalidInputThrowsException() {
@@ -319,17 +296,16 @@ static void testInvalidInputThrowsException() {
 
 ## Quality Score Breakdown
 
-| Score Range | Grade      | Description                                      |
-| ----------- | ---------- | ------------------------------------------------ |
-| 80-100      | Excellent  | Comprehensive tests following all best practices |
-| 60-79       | Good       | Solid tests with minor improvements needed       |
-| 40-59       | Needs Work | Significant gaps in coverage or practices        |
-| 0-39        | Poor       | Major issues, recommend complete rewrite         |
+| Score Range | Grade | Description |
+|-------------|-------|-------------|
+| 80-100 | Excellent | Comprehensive tests following all best practices |
+| 60-79 | Good | Solid tests with minor improvements needed |
+| 40-59 | Needs Work | Significant gaps in coverage or practices |
+| 0-39 | Poor | Major issues, recommend complete rewrite |
 
 ## Issue Severity Levels
 
 ### CRITICAL
-
 - Meaningless System.assert(true) assertions
 - Hardcoded Salesforce IDs
 - SeeAllData=true usage
@@ -337,7 +313,6 @@ static void testInvalidInputThrowsException() {
 - No bulk testing for DML operations
 
 ### HIGH
-
 - Missing Test.startTest/stopTest
 - Insufficient assertions (< 1 per test method)
 - No negative test cases
@@ -345,14 +320,12 @@ static void testInvalidInputThrowsException() {
 - Single record testing only
 
 ### MEDIUM
-
 - No @testSetup method
 - Missing assertion messages
 - Limited test method coverage
 - Insufficient method documentation
 
 ### LOW
-
 - Missing class-level documentation
 - Unclear test method naming
 - Minor documentation gaps
@@ -378,25 +351,19 @@ npm run batch:analyze-deep
 ## Troubleshooting
 
 ### Issue: Tests fail after deployment
-
 **Solution**: Check the deployment errors in the report. Common issues:
-
 - Test data references non-existent records
 - API version mismatch
 - Missing required fields in test data
 
 ### Issue: Coverage didn't increase as expected
-
 **Solution**:
-
 - Check that tests were actually deployed (look for "deployed: true" in report)
 - Run tests in sandbox: `sf apex run test --target-org dev-sandbox`
 - Review generated test code for completeness
 
 ### Issue: Mock errors during test execution
-
 **Solution**:
-
 - Ensure Test.setMock() is called before the callout
 - Verify mock class implements correct interface
 - Check endpoint matching in multi-endpoint mocks
@@ -414,14 +381,13 @@ After running test improvements:
 ## Advanced Usage
 
 ### Generate Test Data Factories
-
 ```javascript
-import { TestDataFactoryGenerator } from "./src/services/test-data-factory-generator.js";
+import { TestDataFactoryGenerator } from './src/services/test-data-factory-generator.js';
 
 const generator = new TestDataFactoryGenerator(salesforceManager, logger);
 
 // Generate builder for Account
-const accountBuilder = await generator.generateFactoryForSObject("Account");
+const accountBuilder = await generator.generateFactoryForSObject('Account');
 // Output: AccountBuilder.cls with builder pattern
 
 // Generate universal factory
@@ -430,26 +396,15 @@ const universalFactory = generator.generateUniversalFactory();
 ```
 
 ### Generate Custom Mocks
-
 ```javascript
-import { MockFrameworkGenerator } from "./src/services/mock-framework-generator.js";
+import { MockFrameworkGenerator } from './src/services/mock-framework-generator.js';
 
 const generator = new MockFrameworkGenerator(logger);
 
 // Generate HTTP mock for specific endpoints
-const mock = generator.generateMultiEndpointMock("ExternalAPIMock", [
-  {
-    method: "GET",
-    endpoint: "/api/users",
-    statusCode: 200,
-    responseBody: '{"users": []}'
-  },
-  {
-    method: "POST",
-    endpoint: "/api/users",
-    statusCode: 201,
-    responseBody: '{"id": "123"}'
-  }
+const mock = generator.generateMultiEndpointMock('ExternalAPIMock', [
+    { method: 'GET', endpoint: '/api/users', statusCode: 200, responseBody: '{"users": []}' },
+    { method: 'POST', endpoint: '/api/users', statusCode: 201, responseBody: '{"id": "123"}' }
 ]);
 ```
 
@@ -467,7 +422,6 @@ Test Improvement System
 ## Environment Variables
 
 Required in `.env`:
-
 ```
 ANTHROPIC_API_KEY=<your-key>
 SF_LOGIN_URL=https://login.salesforce.com
@@ -477,7 +431,6 @@ SF_API_VERSION=60.0
 ## Support
 
 For issues or questions:
-
 1. Check logs: `npm run logs`
 2. Review reports in `./output/test-improvements/`
 3. Check progress.json for resume capability

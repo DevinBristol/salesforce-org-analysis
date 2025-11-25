@@ -1,0 +1,45 @@
+[
+  {
+    "snapshotId": "snapshot-1764040488468",
+    "deploymentId": "deploy-1764040488467",
+    "targetOrg": "Devin1",
+    "timestamp": "2025-11-25T03:14:48.468Z",
+    "componentCount": 1,
+    "components": [
+      {
+        "type": "ApexClass",
+        "name": "Five9Response",
+        "isNew": false
+      }
+    ]
+  },
+  {
+    "snapshotId": "snapshot-1764037612397",
+    "deploymentId": "deploy-1764037612396",
+    "targetOrg": "dev-sandbox",
+    "timestamp": "2025-11-25T02:26:52.397Z",
+    "componentCount": 4,
+    "components": [
+      {
+        "type": "ApexClass",
+        "name": "ContactTriggerHandler",
+        "isNew": false
+      },
+      {
+        "type": "ApexClass",
+        "name": "ContactDMLService",
+        "isNew": true
+      },
+      {
+        "type": "ApexClass",
+        "name": "ContactTriggerHandlerTest",
+        "isNew": true
+      },
+      {
+        "type": "ApexClass",
+        "name": "ContactDMLServiceTest",
+        "isNew": true
+      }
+    ]
+  }
+]

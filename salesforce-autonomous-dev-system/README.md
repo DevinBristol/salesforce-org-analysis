@@ -45,7 +45,6 @@ cd salesforce-org-analysis
 ### 3. Configure Environment
 
 Edit `.env` file with your credentials:
-
 ```env
 CLAUDE_API_KEY=your_claude_api_key
 SF_USERNAME=your_salesforce_username@example.com
@@ -108,7 +107,6 @@ npm run demo:apex-improvement
 ```
 
 This will:
-
 1. Scan your org for Apex classes
 2. Identify improvement opportunities
 3. Generate optimized code
@@ -144,16 +142,16 @@ salesforce-org-analysis/
 
 ## 🔧 Commands Reference
 
-| Command                         | Description                   |
-| ------------------------------- | ----------------------------- |
-| `npm run start`                 | Start the autonomous system   |
-| `npm run task "..."`            | Submit a development task     |
-| `npm run interactive`           | Interactive task submission   |
+| Command | Description |
+|---------|-------------|
+| `npm run start` | Start the autonomous system |
+| `npm run task "..."` | Submit a development task |
+| `npm run interactive` | Interactive task submission |
 | `npm run demo:apex-improvement` | Run the Apex improvement demo |
-| `npm run health-check`          | Check system health           |
-| `npm run init-system`           | Initialize the system         |
-| `npm run analyze-org`           | Analyze Salesforce org        |
-| `npm run logs`                  | View system logs              |
+| `npm run health-check` | Check system health |
+| `npm run init-system` | Initialize the system |
+| `npm run analyze-org` | Analyze Salesforce org |
+| `npm run logs` | View system logs |
 
 ## 🏗️ Architecture
 
@@ -207,21 +205,18 @@ graph TD
 ### Common Issues
 
 **Cannot connect to Salesforce**
-
 ```bash
 sf org logout --target-org dev-sandbox
 sf org login web --alias dev-sandbox --instance-url https://test.salesforce.com
 ```
 
 **Server not starting**
-
 ```bash
 npm run health-check  # Check for issues
 npm install          # Reinstall dependencies
 ```
 
 **Deployment failures**
-
 ```bash
 sf deploy report --last  # Check last deployment
 npm run logs            # View system logs
@@ -242,7 +237,6 @@ This project is licensed under the MIT License.
 ## 👥 Support
 
 For issues and questions:
-
 - GitHub Issues: [Create an issue](https://github.com/DevinBristol/salesforce-org-analysis/issues)
 - Documentation: Check IMPLEMENTATION.md for detailed setup
 
@@ -257,4 +251,4 @@ For issues and questions:
 
 **Built with ❤️ for the Salesforce community**
 
-_Accelerate your Salesforce development with AI_
+*Accelerate your Salesforce development with AI*

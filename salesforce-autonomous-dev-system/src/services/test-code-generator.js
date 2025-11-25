@@ -1,186 +1,199 @@
 // src/services/test-code-generator.js - AI-Powered Test Code Generation Service
 
-import Anthropic from "@anthropic-ai/sdk";
-import { z } from "zod";
+import Anthropic from '@anthropic-ai/sdk';
+import { z } from 'zod';
+import { trackApiUsage } from '../utils/ai-cost-tracker.js';
 
 // Define response schemas for structured outputs
 const TestImprovementSchema = z.object({
-  improvedCode: z.string(),
-  improvements: z.array(
-    z.object({
-      type: z.string(),
-      description: z.string()
-    })
-  )
+    improvedCode: z.string(),
+    improvements: z.array(z.object({
+        type: z.string(),
+        description: z.string()
+    }))
 });
 
 const TestGenerationSchema = z.object({
-  testCode: z.string()
+    testCode: z.string()
 });
 
 /**
  * Generates and improves Apex test classes using AI
  */
 export class TestCodeGenerator {
-  constructor(logger) {
-    this.logger = logger;
-    this.anthropic = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY
-    });
-  }
-
-  /**
-   * Improves an existing test class based on quality analysis
-   * @param {string} testClassContent - Current test class code
-   * @param {string} testClassName - Name of the test class
-   * @param {Object} qualityAnalysis - Results from TestQualityAnalyzer
-   * @param {Object} classToTest - The production class being tested (optional)
-   * @returns {Object} {improvedCode, improvements, documentation}
-   */
-  async improveTestClass(
-    testClassContent,
-    testClassName,
-    qualityAnalysis,
-    classToTest = null
-  ) {
-    try {
-      this.logger.info(
-        `Improving test class: ${testClassName} (Score: ${qualityAnalysis.score}/100)`
-      );
-
-      const systemPrompt = this.buildTestImprovementSystemPrompt();
-      const userPrompt = this.buildTestImprovementPrompt(
-        testClassContent,
-        testClassName,
-        qualityAnalysis,
-        classToTest
-      );
-
-      const response = await this.anthropic.messages.create(
-        {
-          model: process.env.ANTHROPIC_MODEL || "claude-sonnet-4-20250514",
-          max_tokens: 8000,
-          temperature: 0.3,
-          system: [
-            {
-              type: "text",
-              text: systemPrompt,
-              cache_control: { type: "ephemeral" }
-            }
-          ],
-          messages: [
-            {
-              role: "user",
-              content: userPrompt
-            }
-          ]
-        },
-        {
-          headers: {
-            "anthropic-beta": "prompt-caching-2024-07-31"
-          }
-        }
-      );
-
-      // Extract structured response
-      const responseData = JSON.parse(response.content[0].text);
-      const improvedCode = responseData.improvedCode;
-      const improvements = responseData.improvements;
-
-      return {
-        success: true,
-        improvedCode,
-        improvements,
-        originalScore: qualityAnalysis.score,
-        metadata: this.generateTestMetadata()
-      };
-    } catch (error) {
-      this.logger.error(
-        `Failed to improve test class ${testClassName}:`,
-        error
-      );
-      return {
-        success: false,
-        error: error.message
-      };
+    constructor(logger) {
+        this.logger = logger;
+        this.anthropic = new Anthropic({
+            apiKey: process.env.ANTHROPIC_API_KEY,
+            timeout: 120000, // 120 seconds
+            maxRetries: 3
+        });
     }
-  }
 
-  /**
-   * Generates a new test class from scratch for a production class
-   * @param {string} classContent - Production class source code
-   * @param {string} className - Name of the production class
-   * @param {number} targetCoverage - Target coverage percentage (default 100)
-   * @returns {Object} {testCode, testClassName, coverage, documentation}
-   */
-  async generateNewTestClass(classContent, className, targetCoverage = 100) {
-    try {
-      this.logger.info(
-        `Generating new test class for: ${className} (Target: ${targetCoverage}%)`
-      );
+    /**
+     * Improves an existing test class based on quality analysis
+     * @param {string} testClassContent - Current test class code
+     * @param {string} testClassName - Name of the test class
+     * @param {Object} qualityAnalysis - Results from TestQualityAnalyzer
+     * @param {Object} classToTest - The production class being tested (optional)
+     * @returns {Object} {improvedCode, improvements, documentation}
+     */
+    async improveTestClass(testClassContent, testClassName, qualityAnalysis, classToTest = null) {
+        try {
+            this.logger.info(`Improving test class: ${testClassName} (Score: ${qualityAnalysis.score}/100)`);
 
-      const systemPrompt = this.buildTestGenerationSystemPrompt();
-      const userPrompt = this.buildTestGenerationPrompt(
-        classContent,
-        className,
-        targetCoverage
-      );
+            const systemPrompt = this.buildTestImprovementSystemPrompt();
+            const userPrompt = this.buildTestImprovementPrompt(
+                testClassContent,
+                testClassName,
+                qualityAnalysis,
+                classToTest
+            );
 
-      const response = await this.anthropic.messages.create(
-        {
-          model: process.env.ANTHROPIC_MODEL || "claude-sonnet-4-20250514",
-          max_tokens: 8000,
-          temperature: 0.3,
-          system: [
-            {
-              type: "text",
-              text: systemPrompt,
-              cache_control: { type: "ephemeral" }
+            const response = await this.anthropic.messages.create({
+                model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514',
+                max_tokens: 8000,
+                temperature: 0.3,
+                system: [
+                    {
+                        type: "text",
+                        text: systemPrompt,
+                        cache_control: { type: "ephemeral" }
+                    }
+                ],
+                messages: [{
+                    role: 'user',
+                    content: userPrompt
+                }]
+            }, {
+                headers: {
+                    'anthropic-beta': 'prompt-caching-2024-07-31'
+                }
+            });
+
+            // Parse and validate with Zod schema
+            const rawData = JSON.parse(response.content[0].text);
+            const result = TestImprovementSchema.safeParse(rawData);
+            if (!result.success) {
+                this.logger.error('Schema validation failed for test improvement:', result.error.errors);
+                throw new Error('Invalid AI response structure for test improvement');
             }
-          ],
-          messages: [
-            {
-              role: "user",
-              content: userPrompt
-            }
-          ]
-        },
-        {
-          headers: {
-            "anthropic-beta": "prompt-caching-2024-07-31"
-          }
+            const { improvedCode, improvements } = result.data;
+
+            // Capture token usage
+            const usage = {
+                inputTokens: response.usage.input_tokens,
+                outputTokens: response.usage.output_tokens,
+                cacheReadTokens: response.usage.cache_read_input_tokens || 0,
+                cacheCreationTokens: response.usage.cache_creation_input_tokens || 0
+            };
+
+            // Track cost in database
+            trackApiUsage(response);
+
+            this.logger.info(`Tokens used - Input: ${usage.inputTokens}, Output: ${usage.outputTokens}, Cache Read: ${usage.cacheReadTokens}`);
+
+            return {
+                success: true,
+                improvedCode,
+                improvements,
+                originalScore: qualityAnalysis.score,
+                metadata: this.generateTestMetadata(),
+                usage
+            };
+        } catch (error) {
+            this.logger.error(`Failed to improve test class ${testClassName}:`, error);
+            return {
+                success: false,
+                error: error.message
+            };
         }
-      );
-
-      // Extract structured response
-      const responseData = JSON.parse(response.content[0].text);
-      const testCode = responseData.testCode;
-      const testClassName = `${className}Test`;
-
-      return {
-        success: true,
-        testCode,
-        testClassName,
-        targetCoverage,
-        metadata: this.generateTestMetadata()
-      };
-    } catch (error) {
-      this.logger.error(
-        `Failed to generate test class for ${className}:`,
-        error
-      );
-      return {
-        success: false,
-        error: error.message
-      };
     }
-  }
 
-  /**
-   * Builds system prompt for test improvement
-   */
-  buildTestImprovementSystemPrompt() {
-    return `You are an expert Salesforce test automation engineer specializing in writing high-quality, comprehensive test classes.
+    /**
+     * Generates a new test class from scratch for a production class
+     * @param {string} classContent - Production class source code
+     * @param {string} className - Name of the production class
+     * @param {number} targetCoverage - Target coverage percentage (default 100)
+     * @returns {Object} {testCode, testClassName, coverage, documentation}
+     */
+    async generateNewTestClass(classContent, className, targetCoverage = 100) {
+        try {
+            this.logger.info(`Generating new test class for: ${className} (Target: ${targetCoverage}%)`);
+
+            const systemPrompt = this.buildTestGenerationSystemPrompt();
+            const userPrompt = this.buildTestGenerationPrompt(
+                classContent,
+                className,
+                targetCoverage
+            );
+
+            const response = await this.anthropic.messages.create({
+                model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514',
+                max_tokens: 8000,
+                temperature: 0.3,
+                system: [
+                    {
+                        type: "text",
+                        text: systemPrompt,
+                        cache_control: { type: "ephemeral" }
+                    }
+                ],
+                messages: [{
+                    role: 'user',
+                    content: userPrompt
+                }]
+            }, {
+                headers: {
+                    'anthropic-beta': 'prompt-caching-2024-07-31'
+                }
+            });
+
+            // Parse and validate with Zod schema
+            const rawData = JSON.parse(response.content[0].text);
+            const result = TestGenerationSchema.safeParse(rawData);
+            if (!result.success) {
+                this.logger.error('Schema validation failed for test generation:', result.error.errors);
+                throw new Error('Invalid AI response structure for test generation');
+            }
+            const testCode = result.data.testCode;
+            const testClassName = `${className}Test`;
+
+            // Capture token usage
+            const usage = {
+                inputTokens: response.usage.input_tokens,
+                outputTokens: response.usage.output_tokens,
+                cacheReadTokens: response.usage.cache_read_input_tokens || 0,
+                cacheCreationTokens: response.usage.cache_creation_input_tokens || 0
+            };
+
+            // Track cost in database
+            trackApiUsage(response);
+
+            this.logger.info(`Tokens used - Input: ${usage.inputTokens}, Output: ${usage.outputTokens}, Cache Read: ${usage.cacheReadTokens}`);
+
+            return {
+                success: true,
+                testCode,
+                testClassName,
+                targetCoverage,
+                metadata: this.generateTestMetadata(),
+                usage
+            };
+        } catch (error) {
+            this.logger.error(`Failed to generate test class for ${className}:`, error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    /**
+     * Builds system prompt for test improvement
+     */
+    buildTestImprovementSystemPrompt() {
+        return `You are an expert Salesforce test automation engineer specializing in writing high-quality, comprehensive test classes.
 
 YOUR TASK: Improve an existing Apex test class to follow Salesforce best practices and achieve comprehensive coverage.
 
@@ -230,13 +243,13 @@ private class YourTestClass {
 \`\`\`
 
 OUTPUT: Provide ONLY the complete improved Apex test class code, no explanations.`;
-  }
+    }
 
-  /**
-   * Builds system prompt for new test generation
-   */
-  buildTestGenerationSystemPrompt() {
-    return `You are an expert Salesforce test automation engineer specializing in writing comprehensive test classes from scratch.
+    /**
+     * Builds system prompt for new test generation
+     */
+    buildTestGenerationSystemPrompt() {
+        return `You are an expert Salesforce test automation engineer specializing in writing comprehensive test classes from scratch.
 
 YOUR TASK: Generate a complete Apex test class that achieves ${100}% code coverage for the provided production class.
 
@@ -292,261 +305,253 @@ private class MockHttpResponse implements HttpCalloutMock {
 \`\`\`
 
 OUTPUT: Provide ONLY the complete Apex test class code, no explanations.`;
-  }
-
-  /**
-   * Builds user prompt for test improvement
-   */
-  buildTestImprovementPrompt(
-    testClassContent,
-    testClassName,
-    qualityAnalysis,
-    classToTest
-  ) {
-    let prompt = `IMPROVE THIS TEST CLASS:\n\n`;
-    prompt += `Class Name: ${testClassName}\n`;
-    prompt += `Current Quality Score: ${qualityAnalysis.score}/100\n\n`;
-
-    // Add quality issues
-    if (qualityAnalysis.issues.critical.length > 0) {
-      prompt += `CRITICAL ISSUES TO FIX:\n`;
-      qualityAnalysis.issues.critical.forEach((issue) => {
-        prompt += `- ${issue.type}: ${issue.description}\n`;
-        prompt += `  Fix: ${issue.recommendation}\n`;
-      });
-      prompt += `\n`;
     }
 
-    if (qualityAnalysis.issues.high.length > 0) {
-      prompt += `HIGH PRIORITY ISSUES:\n`;
-      qualityAnalysis.issues.high.forEach((issue) => {
-        prompt += `- ${issue.type}: ${issue.description}\n`;
-        prompt += `  Fix: ${issue.recommendation}\n`;
-      });
-      prompt += `\n`;
+    /**
+     * Builds user prompt for test improvement
+     */
+    buildTestImprovementPrompt(testClassContent, testClassName, qualityAnalysis, classToTest) {
+        let prompt = `IMPROVE THIS TEST CLASS:\n\n`;
+        prompt += `Class Name: ${testClassName}\n`;
+        prompt += `Current Quality Score: ${qualityAnalysis.score}/100\n\n`;
+
+        // Add quality issues
+        if (qualityAnalysis.issues.critical.length > 0) {
+            prompt += `CRITICAL ISSUES TO FIX:\n`;
+            qualityAnalysis.issues.critical.forEach(issue => {
+                prompt += `- ${issue.type}: ${issue.description}\n`;
+                prompt += `  Fix: ${issue.recommendation}\n`;
+            });
+            prompt += `\n`;
+        }
+
+        if (qualityAnalysis.issues.high.length > 0) {
+            prompt += `HIGH PRIORITY ISSUES:\n`;
+            qualityAnalysis.issues.high.forEach(issue => {
+                prompt += `- ${issue.type}: ${issue.description}\n`;
+                prompt += `  Fix: ${issue.recommendation}\n`;
+            });
+            prompt += `\n`;
+        }
+
+        if (qualityAnalysis.issues.medium.length > 0) {
+            prompt += `MEDIUM PRIORITY IMPROVEMENTS:\n`;
+            qualityAnalysis.issues.medium.forEach(issue => {
+                prompt += `- ${issue.type}: ${issue.description}\n`;
+            });
+            prompt += `\n`;
+        }
+
+        // Add production class if available
+        if (classToTest) {
+            prompt += `PRODUCTION CLASS BEING TESTED:\n\`\`\`apex\n${classToTest.content}\n\`\`\`\n\n`;
+        }
+
+        prompt += `CURRENT TEST CLASS CODE:\n\`\`\`apex\n${testClassContent}\n\`\`\`\n\n`;
+
+        prompt += `Generate the improved test class that addresses all issues and achieves 100% coverage.`;
+
+        return prompt;
     }
 
-    if (qualityAnalysis.issues.medium.length > 0) {
-      prompt += `MEDIUM PRIORITY IMPROVEMENTS:\n`;
-      qualityAnalysis.issues.medium.forEach((issue) => {
-        prompt += `- ${issue.type}: ${issue.description}\n`;
-      });
-      prompt += `\n`;
+    /**
+     * Builds user prompt for new test generation
+     */
+    buildTestGenerationPrompt(classContent, className, targetCoverage) {
+        let prompt = `GENERATE A COMPREHENSIVE TEST CLASS:\n\n`;
+        prompt += `Production Class Name: ${className}\n`;
+        prompt += `Target Coverage: ${targetCoverage}%\n`;
+        prompt += `Test Class Name: ${className}Test\n\n`;
+
+        prompt += `PRODUCTION CLASS TO TEST:\n\`\`\`apex\n${classContent}\n\`\`\`\n\n`;
+
+        prompt += `REQUIREMENTS:\n`;
+        prompt += `1. Achieve ${targetCoverage}% code coverage by testing all methods and branches\n`;
+        prompt += `2. Include bulk testing with 200 records for all DML operations\n`;
+        prompt += `3. Test positive scenarios, negative scenarios, and edge cases\n`;
+        prompt += `4. Use meaningful assertions with descriptive messages\n`;
+        prompt += `5. Implement mocks for any external dependencies (callouts, etc.)\n`;
+        prompt += `6. Add comprehensive JavaDoc documentation\n`;
+        prompt += `7. Follow Salesforce best practices (Test.startTest/stopTest, @testSetup, etc.)\n\n`;
+
+        prompt += `Generate the complete test class now.`;
+
+        return prompt;
     }
 
-    // Add production class if available
-    if (classToTest) {
-      prompt += `PRODUCTION CLASS BEING TESTED:\n\`\`\`apex\n${classToTest.content}\n\`\`\`\n\n`;
-    }
+    /**
+     * Generates a complete test suite with documentation generation
+     * @param {string} classContent - Production class code
+     * @param {string} className - Production class name
+     * @returns {Object} Test class with comprehensive documentation
+     */
+    async generateTestClassWithDocumentation(classContent, className) {
+        try {
+            this.logger.info(`Generating test class with full documentation for: ${className}`);
 
-    prompt += `CURRENT TEST CLASS CODE:\n\`\`\`apex\n${testClassContent}\n\`\`\`\n\n`;
-
-    prompt += `Generate the improved test class that addresses all issues and achieves 100% coverage.`;
-
-    return prompt;
-  }
-
-  /**
-   * Builds user prompt for new test generation
-   */
-  buildTestGenerationPrompt(classContent, className, targetCoverage) {
-    let prompt = `GENERATE A COMPREHENSIVE TEST CLASS:\n\n`;
-    prompt += `Production Class Name: ${className}\n`;
-    prompt += `Target Coverage: ${targetCoverage}%\n`;
-    prompt += `Test Class Name: ${className}Test\n\n`;
-
-    prompt += `PRODUCTION CLASS TO TEST:\n\`\`\`apex\n${classContent}\n\`\`\`\n\n`;
-
-    prompt += `REQUIREMENTS:\n`;
-    prompt += `1. Achieve ${targetCoverage}% code coverage by testing all methods and branches\n`;
-    prompt += `2. Include bulk testing with 200 records for all DML operations\n`;
-    prompt += `3. Test positive scenarios, negative scenarios, and edge cases\n`;
-    prompt += `4. Use meaningful assertions with descriptive messages\n`;
-    prompt += `5. Implement mocks for any external dependencies (callouts, etc.)\n`;
-    prompt += `6. Add comprehensive JavaDoc documentation\n`;
-    prompt += `7. Follow Salesforce best practices (Test.startTest/stopTest, @testSetup, etc.)\n\n`;
-
-    prompt += `Generate the complete test class now.`;
-
-    return prompt;
-  }
-
-  /**
-   * Generates a complete test suite with documentation generation
-   * @param {string} classContent - Production class code
-   * @param {string} className - Production class name
-   * @returns {Object} Test class with comprehensive documentation
-   */
-  async generateTestClassWithDocumentation(classContent, className) {
-    try {
-      this.logger.info(
-        `Generating test class with full documentation for: ${className}`
-      );
-
-      const systemPrompt =
-        this.buildTestGenerationSystemPrompt() +
-        `\n\nADDITIONAL REQUIREMENT: Add comprehensive documentation to EVERY method including:
+            const systemPrompt = this.buildTestGenerationSystemPrompt() + `\n\nADDITIONAL REQUIREMENT: Add comprehensive documentation to EVERY method including:
 - Class-level JavaDoc describing the test suite
 - Method-level JavaDoc with Given/When/Then structure
 - Inline comments explaining complex test logic
 - Documentation of mock implementations`;
 
-      const userPrompt = this.buildTestGenerationPrompt(
-        classContent,
-        className,
-        100
-      );
+            const userPrompt = this.buildTestGenerationPrompt(classContent, className, 100);
 
-      const response = await this.anthropic.messages.create(
-        {
-          model: process.env.ANTHROPIC_MODEL || "claude-sonnet-4-20250514",
-          max_tokens: 8000,
-          temperature: 0.3,
-          system: [
-            {
-              type: "text",
-              text: systemPrompt,
-              cache_control: { type: "ephemeral" }
+            const response = await this.anthropic.messages.create({
+                model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514',
+                max_tokens: 8000,
+                temperature: 0.3,
+                system: [
+                    {
+                        type: "text",
+                        text: systemPrompt,
+                        cache_control: { type: "ephemeral" }
+                    }
+                ],
+                messages: [{
+                    role: 'user',
+                    content: userPrompt
+                }]
+            }, {
+                headers: {
+                    'anthropic-beta': 'prompt-caching-2024-07-31'
+                }
+            });
+
+            // Parse and validate with Zod schema
+            const rawData = JSON.parse(response.content[0].text);
+            const result = TestGenerationSchema.safeParse(rawData);
+            if (!result.success) {
+                this.logger.error('Schema validation failed for documented test generation:', result.error.errors);
+                throw new Error('Invalid AI response structure for documented test generation');
             }
-          ],
-          messages: [
-            {
-              role: "user",
-              content: userPrompt
-            }
-          ]
-        },
-        {
-          headers: {
-            "anthropic-beta": "prompt-caching-2024-07-31"
-          }
+            const testCode = result.data.testCode;
+            const testClassName = `${className}Test`;
+
+            // Capture token usage
+            const usage = {
+                inputTokens: response.usage.input_tokens,
+                outputTokens: response.usage.output_tokens,
+                cacheReadTokens: response.usage.cache_read_input_tokens || 0,
+                cacheCreationTokens: response.usage.cache_creation_input_tokens || 0
+            };
+
+            // Track cost in database
+            trackApiUsage(response);
+
+            this.logger.info(`Tokens used - Input: ${usage.inputTokens}, Output: ${usage.outputTokens}, Cache Read: ${usage.cacheReadTokens}`);
+
+            return {
+                success: true,
+                testCode,
+                testClassName,
+                hasFullDocumentation: true,
+                metadata: this.generateTestMetadata(),
+                usage
+            };
+        } catch (error) {
+            this.logger.error(`Failed to generate documented test for ${className}:`, error);
+            return {
+                success: false,
+                error: error.message
+            };
         }
-      );
-
-      // Extract structured response
-      const responseData = JSON.parse(response.content[0].text);
-      const testCode = responseData.testCode;
-      const testClassName = `${className}Test`;
-
-      return {
-        success: true,
-        testCode,
-        testClassName,
-        hasFullDocumentation: true,
-        metadata: this.generateTestMetadata()
-      };
-    } catch (error) {
-      this.logger.error(
-        `Failed to generate documented test for ${className}:`,
-        error
-      );
-      return {
-        success: false,
-        error: error.message
-      };
-    }
-  }
-
-  /**
-   * Extracts code from AI response
-   */
-  extractCodeFromResponse(responseText) {
-    // Extract code from markdown code blocks
-    const codeBlockMatch = responseText.match(/```apex\n([\s\S]*?)```/);
-    if (codeBlockMatch) {
-      return codeBlockMatch[1].trim();
     }
 
-    // If no code block, return the whole response (might be just code)
-    return responseText.trim();
-  }
+    /**
+     * Extracts code from AI response
+     */
+    extractCodeFromResponse(responseText) {
+        // Extract code from markdown code blocks
+        const codeBlockMatch = responseText.match(/```apex\n([\s\S]*?)```/);
+        if (codeBlockMatch) {
+            return codeBlockMatch[1].trim();
+        }
 
-  /**
-   * Extracts improvements list from AI response
-   */
-  extractImprovementsFromResponse(responseText) {
-    const improvements = [];
+        // If no code block, return the whole response (might be just code)
+        return responseText.trim();
+    }
 
-    // Look for IMPROVED comments
-    const improvedRegions =
-      responseText.match(/\/\/region IMPROVED: ([^\n]+)/g) || [];
-    improvedRegions.forEach((region) => {
-      const description = region.replace("//region IMPROVED: ", "").trim();
-      improvements.push({
-        type: "Code Improvement",
-        description
-      });
-    });
+    /**
+     * Extracts improvements list from AI response
+     */
+    extractImprovementsFromResponse(responseText) {
+        const improvements = [];
 
-    // Look for inline improvements
-    const inlineImprovements =
-      responseText.match(/\/\/ IMPROVED: ([^\n]+)/g) || [];
-    inlineImprovements.forEach((comment) => {
-      const description = comment.replace("// IMPROVED: ", "").trim();
-      improvements.push({
-        type: "Inline Improvement",
-        description
-      });
-    });
+        // Look for IMPROVED comments
+        const improvedRegions = responseText.match(/\/\/region IMPROVED: ([^\n]+)/g) || [];
+        improvedRegions.forEach(region => {
+            const description = region.replace('//region IMPROVED: ', '').trim();
+            improvements.push({
+                type: 'Code Improvement',
+                description
+            });
+        });
 
-    return improvements;
-  }
+        // Look for inline improvements
+        const inlineImprovements = responseText.match(/\/\/ IMPROVED: ([^\n]+)/g) || [];
+        inlineImprovements.forEach(comment => {
+            const description = comment.replace('// IMPROVED: ', '').trim();
+            improvements.push({
+                type: 'Inline Improvement',
+                description
+            });
+        });
 
-  /**
-   * Generates metadata XML for test class
-   */
-  generateTestMetadata() {
-    return `<?xml version="1.0" encoding="UTF-8"?>
+        return improvements;
+    }
+
+    /**
+     * Generates metadata XML for test class
+     */
+    generateTestMetadata() {
+        return `<?xml version="1.0" encoding="UTF-8"?>
 <ApexClass xmlns="http://soap.sforce.com/2006/04/metadata">
-    <apiVersion>${process.env.SF_API_VERSION || "60.0"}</apiVersion>
+    <apiVersion>${process.env.SF_API_VERSION || '60.0'}</apiVersion>
     <status>Active</status>
 </ApexClass>`;
-  }
-
-  /**
-   * Validates that generated test code meets quality standards
-   * @param {string} testCode - Generated test code
-   * @returns {Object} {valid, issues}
-   */
-  validateGeneratedTest(testCode) {
-    const issues = [];
-
-    // Check for @isTest annotation
-    if (!testCode.includes("@isTest")) {
-      issues.push("Missing @isTest annotation on class or methods");
     }
 
-    // Check for Test.startTest/stopTest
-    if (
-      !testCode.includes("Test.startTest()") ||
-      !testCode.includes("Test.stopTest()")
-    ) {
-      issues.push("Missing Test.startTest()/stopTest() blocks");
-    }
+    /**
+     * Validates that generated test code meets quality standards
+     * @param {string} testCode - Generated test code
+     * @returns {Object} {valid, issues}
+     */
+    validateGeneratedTest(testCode) {
+        const issues = [];
 
-    // Check for assertions
-    const hasAssertions =
-      testCode.includes("System.assert") ||
-      testCode.includes("Assert.areEqual") ||
-      testCode.includes("Assert.isTrue");
-    if (!hasAssertions) {
-      issues.push("No assertions found in test code");
-    }
+        // Check for @isTest annotation
+        if (!testCode.includes('@isTest')) {
+            issues.push('Missing @isTest annotation on class or methods');
+        }
 
-    // Check for meaningful assertions (not just true)
-    if (testCode.includes("System.assert(true)")) {
-      issues.push("Contains meaningless System.assert(true) assertions");
-    }
+        // Check for Test.startTest/stopTest
+        if (!testCode.includes('Test.startTest()') || !testCode.includes('Test.stopTest()')) {
+            issues.push('Missing Test.startTest()/stopTest() blocks');
+        }
 
-    // Check for bulk testing (200 records)
-    const hasBulkTesting = testCode.includes("200") || testCode.includes("201");
-    if (!hasBulkTesting) {
-      issues.push("No bulk testing detected (should test with 200+ records)");
-    }
+        // Check for assertions
+        const hasAssertions = testCode.includes('System.assert') ||
+                             testCode.includes('Assert.areEqual') ||
+                             testCode.includes('Assert.isTrue');
+        if (!hasAssertions) {
+            issues.push('No assertions found in test code');
+        }
 
-    return {
-      valid: issues.length === 0,
-      issues
-    };
-  }
+        // Check for meaningful assertions (not just true)
+        if (testCode.includes('System.assert(true)')) {
+            issues.push('Contains meaningless System.assert(true) assertions');
+        }
+
+        // Check for bulk testing (200 records)
+        const hasBulkTesting = testCode.includes('200') || testCode.includes('201');
+        if (!hasBulkTesting) {
+            issues.push('No bulk testing detected (should test with 200+ records)');
+        }
+
+        return {
+            valid: issues.length === 0,
+            issues
+        };
+    }
 }

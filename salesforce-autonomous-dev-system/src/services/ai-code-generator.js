@@ -1,87 +1,163 @@
 // src/services/ai-code-generator.js - AI-Powered Code Generation
 
-import fs from "fs-extra";
-import { z } from "zod";
+import fs from 'fs-extra';
+import { z } from 'zod';
+import { trackApiUsage } from '../utils/ai-cost-tracker.js';
 
 // Define response schemas for structured outputs
 const CodeGenerationSchema = z.object({
-  apex: z.record(z.string()),
-  tests: z.record(z.string()),
-  metadata: z.record(z.string()),
-  instructions: z.string()
+    apex: z.record(z.string()),
+    tests: z.record(z.string()),
+    metadata: z.record(z.string()),
+    instructions: z.string()
+});
+
+// Schema for refactor mode - includes changes summary
+const RefactorSchema = z.object({
+    apex: z.record(z.string()),
+    tests: z.record(z.string()).optional(),
+    metadata: z.record(z.string()).optional(),
+    changes: z.array(z.object({
+        file: z.string(),
+        type: z.enum(['modified', 'added', 'unchanged']),
+        description: z.string()
+    })),
+    instructions: z.string()
 });
 
 const ApexImprovementSchema = z.object({
-  improvedCode: z.string(),
-  improvements: z.string()
+    improvedCode: z.string(),
+    improvements: z.string()
 });
 
+// Generation modes
+const GENERATION_MODE = {
+    GREENFIELD: 'greenfield',  // New code from scratch
+    REFACTOR: 'refactor'       // Modify existing code
+};
+
 export class AICodeGenerator {
-  constructor(anthropic, logger) {
-    this.anthropic = anthropic;
-    this.logger = logger;
-  }
-
-  async generate(context) {
-    const { task, orgContext, priority } = context;
-
-    try {
-      this.logger.info("Starting AI code generation...");
-
-      // Build the prompt based on task type
-      const prompt = this.buildPrompt(task, orgContext);
-
-      // Call Claude API for code generation
-      const response = await this.anthropic.messages.create(
-        {
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 4000,
-          temperature: 0.2,
-          system: [
-            {
-              type: "text",
-              text: this.getSystemPrompt(),
-              cache_control: { type: "ephemeral" }
-            }
-          ],
-          messages: [
-            {
-              role: "user",
-              content: prompt
-            }
-          ]
-        },
-        {
-          headers: {
-            "anthropic-beta": "prompt-caching-2024-07-31"
-          }
-        }
-      );
-
-      // Parse the generated code from structured response
-      const responseData = JSON.parse(response.content[0].text);
-      const generatedCode = {
-        apex: responseData.apex || {},
-        tests: responseData.tests || {},
-        metadata: responseData.metadata || {},
-        instructions: responseData.instructions || ""
-      };
-
-      // Post-process and validate
-      const artifacts = await this.processArtifacts(generatedCode, task);
-
-      // Save artifacts
-      await this.saveArtifacts(artifacts, task.taskId);
-
-      return artifacts;
-    } catch (error) {
-      this.logger.error("Code generation failed:", error);
-      throw error;
+    constructor(anthropic, logger) {
+        this.anthropic = anthropic;
+        this.logger = logger;
+        this.salesforceManager = null;
     }
-  }
 
-  getSystemPrompt() {
-    return `You are an expert Salesforce developer assistant. You generate high-quality, production-ready Salesforce code including:
+    /**
+     * Set the Salesforce manager for fetching existing code
+     */
+    setSalesforceManager(salesforceManager) {
+        this.salesforceManager = salesforceManager;
+    }
+
+    async generate(context) {
+        const { task, orgContext, priority, mode = GENERATION_MODE.REFACTOR, targetOrg = 'Devin1' } = context;
+
+        try {
+            this.logger.info(`Starting AI code generation in ${mode} mode...`);
+
+            // Fetch existing code context when in refactor mode
+            let existingCode = {};
+            if (mode === GENERATION_MODE.REFACTOR && this.salesforceManager) {
+                this.logger.info('Fetching existing code from org...');
+                existingCode = await this.fetchExistingCode(task, targetOrg);
+                this.logger.info(`Found ${Object.keys(existingCode).length} related classes`);
+            }
+
+            // Build the prompt based on task type and mode
+            const prompt = this.buildPrompt(task, orgContext, mode, existingCode);
+
+            // Select system prompt based on mode
+            const systemPrompt = mode === GENERATION_MODE.REFACTOR
+                ? this.getRefactorSystemPrompt()
+                : this.getSystemPrompt();
+
+            // Call Claude API for code generation
+            const response = await this.anthropic.messages.create({
+                model: 'claude-sonnet-4-20250514',
+                max_tokens: 16384,
+                temperature: 0.2,
+                system: [
+                    {
+                        type: "text",
+                        text: systemPrompt,
+                        cache_control: { type: "ephemeral" }
+                    }
+                ],
+                messages: [
+                    {
+                        role: 'user',
+                        content: prompt
+                    }
+                ]
+            }, {
+                headers: {
+                    'anthropic-beta': 'prompt-caching-2024-07-31'
+                }
+            });
+
+            // Check if response was truncated
+            if (response.stop_reason === 'max_tokens') {
+                this.logger.warn('Response was truncated due to max_tokens limit');
+            }
+
+            // Parse and validate with Zod schema
+            // Strip markdown code blocks if present (Claude sometimes wraps JSON in ```json ... ```)
+            let responseText = response.content[0].text;
+            responseText = responseText.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+
+            let rawData;
+            try {
+                rawData = JSON.parse(responseText);
+            } catch (parseError) {
+                this.logger.error(`JSON parse error at: ${parseError.message}`);
+                this.logger.error(`Response length: ${responseText.length}, Stop reason: ${response.stop_reason}`);
+                this.logger.error(`Response end: ...${responseText.slice(-200)}`);
+                throw parseError;
+            }
+            const result = CodeGenerationSchema.safeParse(rawData);
+            if (!result.success) {
+                this.logger.error('Schema validation failed for code generation:', result.error.errors);
+                throw new Error('Invalid AI response structure for code generation');
+            }
+            const generatedCode = {
+                apex: result.data.apex || {},
+                tests: result.data.tests || {},
+                metadata: result.data.metadata || {},
+                instructions: result.data.instructions || ''
+            };
+
+            // Capture token usage
+            const usage = {
+                inputTokens: response.usage.input_tokens,
+                outputTokens: response.usage.output_tokens,
+                cacheReadTokens: response.usage.cache_read_input_tokens || 0,
+                cacheCreationTokens: response.usage.cache_creation_input_tokens || 0
+            };
+
+            // Track cost in database
+            trackApiUsage(response);
+
+            this.logger.info(`Tokens used - Input: ${usage.inputTokens}, Output: ${usage.outputTokens}, Cache Read: ${usage.cacheReadTokens}`);
+
+            // Post-process and validate
+            const artifacts = await this.processArtifacts(generatedCode, task);
+
+            // Add usage to artifacts
+            artifacts.usage = usage;
+
+            // Save artifacts
+            await this.saveArtifacts(artifacts, task.taskId);
+
+            return artifacts;
+        } catch (error) {
+            this.logger.error('Code generation failed:', error);
+            throw error;
+        }
+    }
+
+    getSystemPrompt() {
+        return `You are an expert Salesforce developer assistant. You generate high-quality, production-ready Salesforce code including:
 - Apex classes and triggers
 - Lightning Web Components (LWC)
 - Flows and Process Builders (as metadata XML)
@@ -103,24 +179,105 @@ Return your response as JSON with this structure:
     "metadata": {"filename.xml": "metadata XML here"},
     "instructions": "deployment instructions here"
 }`;
-  }
-
-  buildPrompt(task, orgContext) {
-    let prompt = `Task: ${task.description}\n\n`;
-    prompt += `Task Type: ${task.type}\n`;
-    prompt += `Affected Objects: ${task.affectedObjects.join(", ")}\n\n`;
-
-    if (orgContext) {
-      prompt += `Current Org Context:\n`;
-      if (orgContext.objects) {
-        prompt += `Objects in org: ${Object.keys(orgContext.objects).join(", ")}\n`;
-      }
-      if (orgContext.customFields) {
-        prompt += `Custom fields available: ${orgContext.customFields.length} fields\n`;
-      }
     }
 
-    prompt += `\nGenerate the complete solution including:
+    /**
+     * System prompt for REFACTOR mode - emphasizes preservation and minimal changes
+     */
+    getRefactorSystemPrompt() {
+        return `You are an expert Salesforce developer performing TARGETED REFACTORING.
+
+CRITICAL RULES - YOU MUST FOLLOW THESE:
+1. PRESERVE ALL EXISTING BUSINESS LOGIC - Do not remove or replace functionality
+2. PRESERVE CLASS INHERITANCE - If a class extends TriggerHandler, keep that inheritance
+3. PRESERVE HELPER CLASS CALLS - Keep all calls to existing helper/utility classes
+4. MINIMAL CHANGES ONLY - Make the smallest possible changes to fix the issues
+5. NO COMPLETE REWRITES - Modify existing code, don't replace it entirely
+
+Your job is to make SURGICAL improvements:
+- Add null/empty checks where missing
+- Add constants for magic numbers
+- Add try-catch blocks for error handling
+- Move DML to a service class IF NEEDED (but keep orchestration in handler)
+- Add comments explaining changes
+
+NEVER:
+- Remove existing method implementations
+- Change method signatures that other code depends on
+- Remove calls to existing helper classes
+- Change the overall architecture
+- Add unnecessary features
+
+Return your response as JSON:
+{
+    "apex": {"ClassName.cls": "complete modified class code"},
+    "tests": {"TestClassName.cls": "test code if needed"},
+    "metadata": {},
+    "changes": [
+        {"file": "ClassName.cls", "type": "modified", "description": "Added null checks, constants"},
+    ],
+    "instructions": "deployment instructions"
+}`;
+    }
+
+    /**
+     * Fetch existing code from the org for context
+     */
+    async fetchExistingCode(task, targetOrg) {
+        if (!this.salesforceManager) {
+            return {};
+        }
+
+        // Extract class name from task description
+        const classNameMatch = task.description.match(/(\w+(?:TriggerHandler|Handler|Helper|Service|Trigger))/i);
+        if (!classNameMatch) {
+            // Try to find class based on affected objects
+            if (task.affectedObjects && task.affectedObjects.length > 0) {
+                const objectName = task.affectedObjects[0].replace('__c', '');
+                return await this.salesforceManager.getRelatedClasses(`${objectName}TriggerHandler`, targetOrg);
+            }
+            return {};
+        }
+
+        const className = classNameMatch[1];
+        return await this.salesforceManager.getRelatedClasses(className, targetOrg);
+    }
+
+    buildPrompt(task, orgContext, mode = 'greenfield', existingCode = {}) {
+        let prompt = `Task: ${task.description}\n\n`;
+        prompt += `Task Type: ${task.type}\n`;
+        prompt += `Affected Objects: ${task.affectedObjects.join(', ')}\n\n`;
+
+        // Add existing code context for refactor mode
+        if (mode === 'refactor' && Object.keys(existingCode).length > 0) {
+            prompt += `=== EXISTING CODE (YOU MUST PRESERVE THIS STRUCTURE) ===\n\n`;
+            for (const [className, code] of Object.entries(existingCode)) {
+                prompt += `--- ${className} ---\n`;
+                prompt += `${code}\n\n`;
+            }
+            prompt += `=== END EXISTING CODE ===\n\n`;
+
+            prompt += `REFACTORING REQUIREMENTS:\n`;
+            prompt += `1. Keep the class inheritance (extends TriggerHandler if present)\n`;
+            prompt += `2. Keep all existing helper class calls (ContactTriggerHelper, NamingUtility, etc.)\n`;
+            prompt += `3. Make MINIMAL changes to address the issues\n`;
+            prompt += `4. Add constants for any magic numbers (recordLists[2] -> ACCOUNTS_INDEX = 2)\n`;
+            prompt += `5. Add empty/null checks before DML and method calls\n`;
+            prompt += `6. Add try-catch blocks for error handling\n`;
+            prompt += `7. If creating a service class, keep handler methods calling existing helpers\n\n`;
+        }
+
+        if (orgContext) {
+            prompt += `Current Org Context:\n`;
+            if (orgContext.objects) {
+                prompt += `Objects in org: ${Object.keys(orgContext.objects).join(', ')}\n`;
+            }
+            if (orgContext.customFields) {
+                prompt += `Custom fields available: ${orgContext.customFields.length} fields\n`;
+            }
+        }
+        
+        prompt += `\nGenerate the complete solution including:
 1. All necessary Apex code
 2. Test classes with >75% coverage
 3. Any required metadata (as XML)
@@ -128,178 +285,152 @@ Return your response as JSON with this structure:
 
 Return as JSON following the schema in the system prompt.`;
 
-    return prompt;
-  }
-
-  parseResponse(responseText) {
-    const artifacts = {
-      apex: {},
-      tests: {},
-      metadata: {},
-      instructions: ""
-    };
-
-    // Parse Apex classes
-    const apexRegex = /\[APEX_CLASS:(.+?)\]([\s\S]*?)\[\/APEX_CLASS\]/g;
-    let match;
-    while ((match = apexRegex.exec(responseText)) !== null) {
-      artifacts.apex[`${match[1]}.cls`] = match[2].trim();
+        return prompt;
     }
 
-    // Parse test classes
-    const testRegex = /\[TEST_CLASS:(.+?)\]([\s\S]*?)\[\/TEST_CLASS\]/g;
-    while ((match = testRegex.exec(responseText)) !== null) {
-      artifacts.tests[`${match[1]}.cls`] = match[2].trim();
+    // Legacy regex parsing method removed - now using Zod schema validation
+    // All responses are validated with CodeGenerationSchema in generate() method
+
+    async processArtifacts(generatedCode, task) {
+        // Combine apex and test classes
+        const allApex = { ...generatedCode.apex, ...generatedCode.tests };
+        
+        // Ensure proper formatting and add headers
+        for (const [fileName, content] of Object.entries(allApex)) {
+            allApex[fileName] = this.addApexHeader(content, fileName, task);
+        }
+
+        return {
+            apex: allApex,
+            metadata: generatedCode.metadata,
+            instructions: generatedCode.instructions,
+            taskId: task.taskId,
+            timestamp: new Date().toISOString()
+        };
     }
 
-    // Parse metadata
-    const metadataRegex = /\[METADATA:(.+?)\]([\s\S]*?)\[\/METADATA\]/g;
-    while ((match = metadataRegex.exec(responseText)) !== null) {
-      artifacts.metadata[match[1]] = match[2].trim();
-    }
-
-    // Extract any instructions
-    const instructionRegex = /\[INSTRUCTIONS\]([\s\S]*?)\[\/INSTRUCTIONS\]/;
-    const instructionMatch = responseText.match(instructionRegex);
-    if (instructionMatch) {
-      artifacts.instructions = instructionMatch[1].trim();
-    }
-
-    return artifacts;
-  }
-
-  async processArtifacts(generatedCode, task) {
-    // Combine apex and test classes
-    const allApex = { ...generatedCode.apex, ...generatedCode.tests };
-
-    // Ensure proper formatting and add headers
-    for (const [fileName, content] of Object.entries(allApex)) {
-      allApex[fileName] = this.addApexHeader(content, fileName, task);
-    }
-
-    return {
-      apex: allApex,
-      metadata: generatedCode.metadata,
-      instructions: generatedCode.instructions,
-      taskId: task.taskId,
-      timestamp: new Date().toISOString()
-    };
-  }
-
-  addApexHeader(content, fileName, task) {
-    const header = `/**
+    addApexHeader(content, fileName, task) {
+        const header = `/**
  * Generated by Autonomous Salesforce Development System
  * Task: ${task.description}
  * Date: ${new Date().toISOString()}
  * File: ${fileName}
  */\n\n`;
-
-    return header + content;
-  }
-
-  async saveArtifacts(artifacts, taskId) {
-    const outputDir = `./output/${taskId}`;
-    await fs.ensureDir(outputDir);
-
-    // Save Apex files
-    if (artifacts.apex) {
-      const apexDir = `${outputDir}/apex`;
-      await fs.ensureDir(apexDir);
-      for (const [fileName, content] of Object.entries(artifacts.apex)) {
-        await fs.writeFile(`${apexDir}/${fileName}`, content);
-      }
+        
+        return header + content;
     }
 
-    // Save metadata files
-    if (artifacts.metadata) {
-      const metadataDir = `${outputDir}/metadata`;
-      await fs.ensureDir(metadataDir);
-      for (const [fileName, content] of Object.entries(artifacts.metadata)) {
-        await fs.writeFile(`${metadataDir}/${fileName}`, content);
-      }
-    }
-
-    // Save instructions
-    if (artifacts.instructions) {
-      await fs.writeFile(
-        `${outputDir}/instructions.md`,
-        artifacts.instructions
-      );
-    }
-
-    // Save summary
-    await fs.writeJson(
-      `${outputDir}/artifacts.json`,
-      {
-        taskId,
-        timestamp: artifacts.timestamp,
-        files: {
-          apex: Object.keys(artifacts.apex || {}),
-          metadata: Object.keys(artifacts.metadata || {})
-        }
-      },
-      { spaces: 2 }
-    );
-
-    this.logger.info(`Artifacts saved to ${outputDir}`);
-  }
-
-  async generateApexImprovement(
-    classContent,
-    className,
-    documentationOnly = false
-  ) {
-    try {
-      const systemPrompt = documentationOnly
-        ? `You are an expert Salesforce developer and technical writer. Your task is to add comprehensive documentation to existing code WITHOUT changing the code logic.`
-        : `You are an expert Salesforce developer. You MUST make actual improvements to the code AND add comprehensive documentation. Every improvement must be wrapped in collapsible regions.`;
-
-      const userPrompt = documentationOnly
-        ? this.buildDocumentationPrompt(classContent, className)
-        : this.buildImprovementPrompt(classContent, className);
-
-      const response = await this.anthropic.messages.create(
-        {
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 8000,
-          temperature: 0.3,
-          system: [
-            {
-              type: "text",
-              text: systemPrompt,
-              cache_control: { type: "ephemeral" }
+    async saveArtifacts(artifacts, taskId) {
+        const outputDir = `./output/${taskId}`;
+        await fs.ensureDir(outputDir);
+        
+        // Save Apex files
+        if (artifacts.apex) {
+            const apexDir = `${outputDir}/apex`;
+            await fs.ensureDir(apexDir);
+            for (const [fileName, content] of Object.entries(artifacts.apex)) {
+                await fs.writeFile(`${apexDir}/${fileName}`, content);
             }
-          ],
-          messages: [
-            {
-              role: "user",
-              content: userPrompt
-            }
-          ]
-        },
-        {
-          headers: {
-            "anthropic-beta": "prompt-caching-2024-07-31"
-          }
         }
-      );
-
-      // Parse structured response
-      const responseData = JSON.parse(response.content[0].text);
-
-      return {
-        improvedCode: responseData.improvedCode,
-        improvements: responseData.improvements,
-        originalCode: classContent
-      };
-    } catch (error) {
-      this.logger.error("Failed to generate improvement:", error);
-      throw error;
+        
+        // Save metadata files
+        if (artifacts.metadata) {
+            const metadataDir = `${outputDir}/metadata`;
+            await fs.ensureDir(metadataDir);
+            for (const [fileName, content] of Object.entries(artifacts.metadata)) {
+                await fs.writeFile(`${metadataDir}/${fileName}`, content);
+            }
+        }
+        
+        // Save instructions
+        if (artifacts.instructions) {
+            await fs.writeFile(`${outputDir}/instructions.md`, artifacts.instructions);
+        }
+        
+        // Save summary
+        await fs.writeJson(`${outputDir}/artifacts.json`, {
+            taskId,
+            timestamp: artifacts.timestamp,
+            files: {
+                apex: Object.keys(artifacts.apex || {}),
+                metadata: Object.keys(artifacts.metadata || {})
+            }
+        }, { spaces: 2 });
+        
+        this.logger.info(`Artifacts saved to ${outputDir}`);
     }
-  }
 
-  buildDocumentationPrompt(classContent, className) {
-    return `Add comprehensive JavaDoc documentation to this Apex class WITHOUT changing any code logic.
+    async generateApexImprovement(classContent, className, documentationOnly = false) {
+        try {
+            const systemPrompt = documentationOnly
+                ? `You are an expert Salesforce developer and technical writer. Your task is to add comprehensive documentation to existing code WITHOUT changing the code logic.`
+                : `You are an expert Salesforce developer. You MUST make actual improvements to the code AND add comprehensive documentation. Every improvement must be wrapped in collapsible regions.`;
+
+            const userPrompt = documentationOnly
+                ? this.buildDocumentationPrompt(classContent, className)
+                : this.buildImprovementPrompt(classContent, className);
+
+            const response = await this.anthropic.messages.create({
+                model: 'claude-sonnet-4-20250514',
+                max_tokens: 8000,
+                temperature: 0.3,
+                system: [
+                    {
+                        type: "text",
+                        text: systemPrompt,
+                        cache_control: { type: "ephemeral" }
+                    }
+                ],
+                messages: [
+                    {
+                        role: 'user',
+                        content: userPrompt
+                    }
+                ]
+            }, {
+                headers: {
+                    'anthropic-beta': 'prompt-caching-2024-07-31'
+                }
+            });
+
+            // Parse and validate with Zod schema
+            // Strip markdown code blocks if present
+            let responseText2 = response.content[0].text;
+            responseText2 = responseText2.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+            const rawData = JSON.parse(responseText2);
+            const result = ApexImprovementSchema.safeParse(rawData);
+            if (!result.success) {
+                this.logger.error('Schema validation failed for Apex improvement:', result.error.errors);
+                throw new Error('Invalid AI response structure for Apex improvement');
+            }
+
+            // Capture token usage
+            const usage = {
+                inputTokens: response.usage.input_tokens,
+                outputTokens: response.usage.output_tokens,
+                cacheReadTokens: response.usage.cache_read_input_tokens || 0,
+                cacheCreationTokens: response.usage.cache_creation_input_tokens || 0
+            };
+
+            // Track cost in database
+            trackApiUsage(response);
+
+            this.logger.info(`Tokens used - Input: ${usage.inputTokens}, Output: ${usage.outputTokens}, Cache Read: ${usage.cacheReadTokens}`);
+
+            return {
+                improvedCode: result.data.improvedCode,
+                improvements: result.data.improvements,
+                originalCode: classContent,
+                usage
+            };
+        } catch (error) {
+            this.logger.error('Failed to generate improvement:', error);
+            throw error;
+        }
+    }
+
+    buildDocumentationPrompt(classContent, className) {
+        return `Add comprehensive JavaDoc documentation to this Apex class WITHOUT changing any code logic.
 
 Class Name: ${className}
 
@@ -327,10 +458,10 @@ Return as JSON:
     "improvedCode": "complete class code with comprehensive documentation",
     "improvements": "list of documentation added"
 }`;
-  }
+    }
 
-  buildImprovementPrompt(classContent, className) {
-    return `Analyze this Apex class and MAKE REAL IMPROVEMENTS with comprehensive documentation.
+    buildImprovementPrompt(classContent, className) {
+        return `Analyze this Apex class and MAKE REAL IMPROVEMENTS with comprehensive documentation.
 
 Class Name: ${className}
 
@@ -407,5 +538,5 @@ Return as JSON:
     "improvedCode": "complete improved class with regions and full documentation",
     "improvements": "numbered list of improvements"
 }`;
-  }
+    }
 }

@@ -7,11 +7,9 @@ All deployment code has been configured with **multiple layers of safety** to en
 ## 🛡️ Safety Layers
 
 ### Layer 1: Default Target Org
-
 **All deployment methods default to Devin1 sandbox**
 
 Files updated:
-
 - ✅ `src/services/salesforce-manager.js` - Default: `'dev-sandbox'`
 - ✅ `src/services/deployment-pipeline.js` - Default: `'Devin1'`
 - ✅ `src/services/test-orchestrator.js` - Default: `'Devin1'` (3 methods)
@@ -19,31 +17,32 @@ Files updated:
 - ✅ `demos/apex-improvement.js` - Default: `process.env.DEV_SANDBOX || 'Devin1'`
 
 ### Layer 2: Sandbox Whitelist
-
 **Whitelisted sandbox orgs only**
 
 Both `SalesforceManager` and `DeploymentPipeline` have whitelists:
-
 ```javascript
 SANDBOX_WHITELIST = [
-  "dev-sandbox",
-  "Devin1",
-  "devin1",
-  "test-sandbox",
-  "uat-sandbox"
-];
+    'dev-sandbox',
+    'Devin1',
+    'devin1',
+    'test-sandbox',
+    'uat-sandbox'
+]
 ```
 
 ### Layer 3: Production Blacklist
-
 **Deployment blocked if org name contains production indicators**
 
 ```javascript
-PRODUCTION_INDICATORS = ["production", "prod", "live", "main"];
+PRODUCTION_INDICATORS = [
+    'production',
+    'prod',
+    'live',
+    'main'
+]
 ```
 
 If you try to deploy to an org with these words, deployment will be **BLOCKED** with error:
-
 ```
 DEPLOYMENT BLOCKED: "production" appears to be a production org.
 Only sandbox deployments are allowed.
@@ -51,19 +50,16 @@ Whitelisted sandboxes: dev-sandbox, Devin1, devin1, test-sandbox, uat-sandbox
 ```
 
 ### Layer 4: Runtime Validation
-
 **Every deployment validates target org before executing**
 
 Method: `validateSandboxTarget(targetOrg)`
 
 For whitelisted orgs:
-
 ```
 ✓ SAFETY CHECK: Devin1 is whitelisted sandbox
 ```
 
 For non-whitelisted orgs (warning, but allowed):
-
 ```
 ⚠ WARNING: "my-custom-sandbox" is not in the sandbox whitelist. Proceeding with caution.
 ⚠ Whitelisted sandboxes: dev-sandbox, Devin1, devin1, test-sandbox, uat-sandbox
@@ -71,7 +67,6 @@ For non-whitelisted orgs (warning, but allowed):
 ```
 
 For production orgs (BLOCKED):
-
 ```
 ❌ DEPLOYMENT BLOCKED: "production" appears to be a production org.
 ```
@@ -122,15 +117,13 @@ node demos/test-improvement-demo.js --mode=improve --target-org=my-other-sandbox
 ## Environment Variable Override
 
 Set in `.env`:
-
 ```
 DEV_SANDBOX=Devin1
 ```
 
 The apex-improvement demo uses this:
-
 ```javascript
-const devSandbox = process.env.DEV_SANDBOX || "Devin1";
+const devSandbox = process.env.DEV_SANDBOX || 'Devin1';
 ```
 
 ## Adding New Sandboxes to Whitelist
@@ -143,44 +136,38 @@ If you create new sandboxes and want to whitelist them:
 2. `src/services/deployment-pipeline.js` (line ~16)
 
 **Add to SANDBOX_WHITELIST:**
-
 ```javascript
 this.SANDBOX_WHITELIST = [
-  "dev-sandbox",
-  "Devin1",
-  "devin1",
-  "test-sandbox",
-  "uat-sandbox",
-  "your-new-sandbox" // Add here
+    'dev-sandbox',
+    'Devin1',
+    'devin1',
+    'test-sandbox',
+    'uat-sandbox',
+    'your-new-sandbox'  // Add here
 ];
 ```
 
 ## What Happens If You Try Production
 
 **Example 1: Using blacklisted name**
-
 ```bash
 node demos/test-improvement-demo.js --target-org=production
 ```
 
 **Result:**
-
 ```
 ❌ Error: DEPLOYMENT BLOCKED: "production" appears to be a production org.
 Only sandbox deployments are allowed.
 Whitelisted sandboxes: dev-sandbox, Devin1, devin1, test-sandbox, uat-sandbox
 ```
-
 **Deployment will NOT execute.**
 
 **Example 2: Using non-whitelisted name without production indicators**
-
 ```bash
 node demos/test-improvement-demo.js --target-org=my-custom-org
 ```
 
 **Result:**
-
 ```
 ⚠ WARNING: "my-custom-org" is not in the sandbox whitelist. Proceeding with caution.
 ⚠ Whitelisted sandboxes: dev-sandbox, Devin1, devin1, test-sandbox, uat-sandbox
@@ -188,7 +175,6 @@ node demos/test-improvement-demo.js --target-org=my-custom-org
 
 [Deployment proceeds]
 ```
-
 **Deployment will execute with warnings.**
 
 ## Verification

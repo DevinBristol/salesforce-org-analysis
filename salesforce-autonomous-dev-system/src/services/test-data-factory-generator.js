@@ -1,93 +1,87 @@
 // src/services/test-data-factory-generator.js - Test Data Factory Generation Service
 
-import { MockFrameworkGenerator } from "./mock-framework-generator.js";
+import { MockFrameworkGenerator } from './mock-framework-generator.js';
 
 /**
  * Generates test data factories and builders for Salesforce SObjects
  */
 export class TestDataFactoryGenerator {
-  constructor(salesforceManager, logger) {
-    this.salesforceManager = salesforceManager;
-    this.logger = logger;
-    this.mockGenerator = new MockFrameworkGenerator(logger);
-  }
-
-  /**
-   * Generates a test data builder for a specific SObject
-   * @param {string} sobjectType - Name of the SObject (e.g., 'Account', 'Opportunity')
-   * @returns {Object} {className, code, metadata}
-   */
-  async generateFactoryForSObject(sobjectType) {
-    try {
-      this.logger.info(`Generating test data factory for ${sobjectType}...`);
-
-      // Get SObject schema from Salesforce
-      const schema = await this.salesforceManager.getObjectSchema(sobjectType);
-
-      // Extract relevant fields
-      const fields = this.extractRelevantFields(schema);
-
-      // Generate builder class
-      const className = `${sobjectType}Builder`;
-      const code = this.mockGenerator.generateTestDataBuilder(
-        sobjectType,
-        fields
-      );
-
-      // Generate metadata XML
-      const metadata = this.generateMetadataXml(className);
-
-      return {
-        className,
-        code,
-        metadata,
-        sobjectType,
-        fieldCount: fields.length
-      };
-    } catch (error) {
-      this.logger.error(
-        `Failed to generate factory for ${sobjectType}:`,
-        error
-      );
-      throw error;
-    }
-  }
-
-  /**
-   * Generates factories for multiple SObjects
-   * @param {Array<string>} sobjectTypes - List of SObject names
-   * @returns {Array} Array of factory generation results
-   */
-  async generateFactoriesForMultipleSObjects(sobjectTypes) {
-    const results = [];
-
-    for (const sobjectType of sobjectTypes) {
-      try {
-        const factory = await this.generateFactoryForSObject(sobjectType);
-        results.push({
-          success: true,
-          sobjectType,
-          factory
-        });
-      } catch (error) {
-        results.push({
-          success: false,
-          sobjectType,
-          error: error.message
-        });
-      }
+    constructor(salesforceManager, logger) {
+        this.salesforceManager = salesforceManager;
+        this.logger = logger;
+        this.mockGenerator = new MockFrameworkGenerator(logger);
     }
 
-    return results;
-  }
+    /**
+     * Generates a test data builder for a specific SObject
+     * @param {string} sobjectType - Name of the SObject (e.g., 'Account', 'Opportunity')
+     * @returns {Object} {className, code, metadata}
+     */
+    async generateFactoryForSObject(sobjectType) {
+        try {
+            this.logger.info(`Generating test data factory for ${sobjectType}...`);
 
-  /**
-   * Generates a universal test data factory that handles common SObjects
-   * @returns {Object} {className, code, metadata}
-   */
-  generateUniversalFactory() {
-    const className = "TestDataFactory";
-    const code = `/**
+            // Get SObject schema from Salesforce
+            const schema = await this.salesforceManager.getObjectSchema(sobjectType);
+
+            // Extract relevant fields
+            const fields = this.extractRelevantFields(schema);
+
+            // Generate builder class
+            const className = `${sobjectType}Builder`;
+            const code = this.mockGenerator.generateTestDataBuilder(sobjectType, fields);
+
+            // Generate metadata XML
+            const metadata = this.generateMetadataXml(className);
+
+            return {
+                className,
+                code,
+                metadata,
+                sobjectType,
+                fieldCount: fields.length
+            };
+        } catch (error) {
+            this.logger.error(`Failed to generate factory for ${sobjectType}:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Generates factories for multiple SObjects
+     * @param {Array<string>} sobjectTypes - List of SObject names
+     * @returns {Array} Array of factory generation results
+     */
+    async generateFactoriesForMultipleSObjects(sobjectTypes) {
+        const results = [];
+
+        for (const sobjectType of sobjectTypes) {
+            try {
+                const factory = await this.generateFactoryForSObject(sobjectType);
+                results.push({
+                    success: true,
+                    sobjectType,
+                    factory
+                });
+            } catch (error) {
+                results.push({
+                    success: false,
+                    sobjectType,
+                    error: error.message
+                });
+            }
+        }
+
+        return results;
+    }
+
+    /**
+     * Generates a universal test data factory that handles common SObjects
+     * @returns {Object} {className, code, metadata}
+     */
+    generateUniversalFactory() {
+        const className = 'TestDataFactory';
+        const code = `/**
  * Universal Test Data Factory
  * Provides builder methods for common Salesforce objects
  * Generated by Salesforce Autonomous Dev System
@@ -194,214 +188,181 @@ public class TestDataFactory {
     }
 }`;
 
-    const metadata = this.generateMetadataXml(className);
+        const metadata = this.generateMetadataXml(className);
 
-    return { className, code, metadata };
-  }
-
-  /**
-   * Extracts relevant fields from SObject schema for test data builder
-   * @param {Object} schema - SObject describe result from Salesforce
-   * @returns {Array} Array of field definitions
-   */
-  extractRelevantFields(schema) {
-    const fields = [];
-
-    for (const field of schema.fields) {
-      // Skip system fields and relationships
-      if (this.shouldIncludeField(field)) {
-        fields.push({
-          name: field.name,
-          type: this.mapSalesforceTypeToApex(field.type),
-          required: !field.nillable && field.createable,
-          label: field.label,
-          length: field.length,
-          isPicklist: field.type === "picklist",
-          picklistValues: field.picklistValues || []
-        });
-      }
+        return { className, code, metadata };
     }
 
-    return fields;
-  }
+    /**
+     * Extracts relevant fields from SObject schema for test data builder
+     * @param {Object} schema - SObject describe result from Salesforce
+     * @returns {Array} Array of field definitions
+     */
+    extractRelevantFields(schema) {
+        const fields = [];
 
-  /**
-   * Determines if a field should be included in the builder
-   * @param {Object} field - Field describe result
-   * @returns {boolean} True if field should be included
-   */
-  shouldIncludeField(field) {
-    // Exclude system fields
-    const systemFields = [
-      "Id",
-      "CreatedDate",
-      "CreatedById",
-      "LastModifiedDate",
-      "LastModifiedById",
-      "SystemModstamp",
-      "IsDeleted"
-    ];
-
-    if (systemFields.includes(field.name)) {
-      return false;
-    }
-
-    // Exclude read-only fields
-    if (!field.createable && !field.updateable) {
-      return false;
-    }
-
-    // Exclude formula fields
-    if (field.calculated) {
-      return false;
-    }
-
-    // Exclude reference fields (lookup/master-detail handled separately)
-    if (field.type === "reference" && field.name.endsWith("Id")) {
-      return false;
-    }
-
-    return true;
-  }
-
-  /**
-   * Maps Salesforce field type to Apex data type
-   * @param {string} salesforceType - Salesforce field type
-   * @returns {string} Apex data type
-   */
-  mapSalesforceTypeToApex(salesforceType) {
-    const typeMap = {
-      string: "String",
-      textarea: "String",
-      email: "String",
-      phone: "String",
-      url: "String",
-      picklist: "String",
-      multipicklist: "String",
-      int: "Integer",
-      double: "Decimal",
-      currency: "Decimal",
-      percent: "Decimal",
-      boolean: "Boolean",
-      date: "Date",
-      datetime: "DateTime",
-      time: "Time",
-      reference: "Id",
-      id: "Id"
-    };
-
-    return typeMap[salesforceType.toLowerCase()] || "String";
-  }
-
-  /**
-   * Analyzes test class to identify which SObjects need factories
-   * @param {string} testClassContent - Test class source code
-   * @returns {Array<string>} List of SObject types used in tests
-   */
-  identifySObjectsInTestClass(testClassContent) {
-    const sobjects = new Set();
-
-    // Look for common SObject patterns
-    const patterns = [
-      /new\s+(\w+)\s*\(/g, // new Account()
-      /\[\s*SELECT\s+.*?\s+FROM\s+(\w+)/gi, // SELECT ... FROM Account
-      /insert\s+(\w+)/gi, // insert account
-      /update\s+(\w+)/gi, // update account
-      /List<(\w+)>/g, // List<Account>
-      /Map<\w+,\s*(\w+)>/g // Map<Id, Account>
-    ];
-
-    for (const pattern of patterns) {
-      let match;
-      while ((match = pattern.exec(testClassContent)) !== null) {
-        const potentialSObject = match[1];
-        // Filter out common Apex types
-        if (this.isPotentialCustomSObject(potentialSObject)) {
-          sobjects.add(potentialSObject);
+        for (const field of schema.fields) {
+            // Skip system fields and relationships
+            if (this.shouldIncludeField(field)) {
+                fields.push({
+                    name: field.name,
+                    type: this.mapSalesforceTypeToApex(field.type),
+                    required: !field.nillable && field.createable,
+                    label: field.label,
+                    length: field.length,
+                    isPicklist: field.type === 'picklist',
+                    picklistValues: field.picklistValues || []
+                });
+            }
         }
-      }
+
+        return fields;
     }
 
-    return Array.from(sobjects);
-  }
+    /**
+     * Determines if a field should be included in the builder
+     * @param {Object} field - Field describe result
+     * @returns {boolean} True if field should be included
+     */
+    shouldIncludeField(field) {
+        // Exclude system fields
+        const systemFields = [
+            'Id', 'CreatedDate', 'CreatedById', 'LastModifiedDate',
+            'LastModifiedById', 'SystemModstamp', 'IsDeleted'
+        ];
 
-  /**
-   * Checks if a type name is likely a custom SObject
-   * @param {string} typeName - Type name to check
-   * @returns {boolean} True if likely a custom SObject
-   */
-  isPotentialCustomSObject(typeName) {
-    // Exclude common Apex types
-    const apexTypes = [
-      "String",
-      "Integer",
-      "Long",
-      "Decimal",
-      "Double",
-      "Boolean",
-      "Date",
-      "DateTime",
-      "Time",
-      "Blob",
-      "Id",
-      "Object",
-      "List",
-      "Set",
-      "Map",
-      "System",
-      "Test",
-      "Database",
-      "Schema",
-      "Exception",
-      "HttpRequest",
-      "HttpResponse"
-    ];
+        if (systemFields.includes(field.name)) {
+            return false;
+        }
 
-    if (apexTypes.includes(typeName)) {
-      return false;
+        // Exclude read-only fields
+        if (!field.createable && !field.updateable) {
+            return false;
+        }
+
+        // Exclude formula fields
+        if (field.calculated) {
+            return false;
+        }
+
+        // Exclude reference fields (lookup/master-detail handled separately)
+        if (field.type === 'reference' && field.name.endsWith('Id')) {
+            return false;
+        }
+
+        return true;
     }
 
-    // Standard objects and custom objects
-    const standardObjects = [
-      "Account",
-      "Contact",
-      "Lead",
-      "Opportunity",
-      "Case",
-      "Task",
-      "Event",
-      "User",
-      "Profile",
-      "PermissionSet",
-      "RecordType",
-      "ContentVersion",
-      "ContentDocument"
-    ];
+    /**
+     * Maps Salesforce field type to Apex data type
+     * @param {string} salesforceType - Salesforce field type
+     * @returns {string} Apex data type
+     */
+    mapSalesforceTypeToApex(salesforceType) {
+        const typeMap = {
+            'string': 'String',
+            'textarea': 'String',
+            'email': 'String',
+            'phone': 'String',
+            'url': 'String',
+            'picklist': 'String',
+            'multipicklist': 'String',
+            'int': 'Integer',
+            'double': 'Decimal',
+            'currency': 'Decimal',
+            'percent': 'Decimal',
+            'boolean': 'Boolean',
+            'date': 'Date',
+            'datetime': 'DateTime',
+            'time': 'Time',
+            'reference': 'Id',
+            'id': 'Id'
+        };
 
-    // Include standard objects and anything ending with __c (custom object)
-    return standardObjects.includes(typeName) || typeName.endsWith("__c");
-  }
+        return typeMap[salesforceType.toLowerCase()] || 'String';
+    }
 
-  /**
-   * Generates metadata XML for the factory class
-   * @param {string} className - Name of the factory class
-   * @returns {string} Metadata XML content
-   */
-  generateMetadataXml(className) {
-    return `<?xml version="1.0" encoding="UTF-8"?>
+    /**
+     * Analyzes test class to identify which SObjects need factories
+     * @param {string} testClassContent - Test class source code
+     * @returns {Array<string>} List of SObject types used in tests
+     */
+    identifySObjectsInTestClass(testClassContent) {
+        const sobjects = new Set();
+
+        // Look for common SObject patterns
+        const patterns = [
+            /new\s+(\w+)\s*\(/g,                    // new Account()
+            /\[\s*SELECT\s+.*?\s+FROM\s+(\w+)/gi,   // SELECT ... FROM Account
+            /insert\s+(\w+)/gi,                     // insert account
+            /update\s+(\w+)/gi,                     // update account
+            /List<(\w+)>/g,                         // List<Account>
+            /Map<\w+,\s*(\w+)>/g                    // Map<Id, Account>
+        ];
+
+        for (const pattern of patterns) {
+            let match;
+            while ((match = pattern.exec(testClassContent)) !== null) {
+                const potentialSObject = match[1];
+                // Filter out common Apex types
+                if (this.isPotentialCustomSObject(potentialSObject)) {
+                    sobjects.add(potentialSObject);
+                }
+            }
+        }
+
+        return Array.from(sobjects);
+    }
+
+    /**
+     * Checks if a type name is likely a custom SObject
+     * @param {string} typeName - Type name to check
+     * @returns {boolean} True if likely a custom SObject
+     */
+    isPotentialCustomSObject(typeName) {
+        // Exclude common Apex types
+        const apexTypes = [
+            'String', 'Integer', 'Long', 'Decimal', 'Double', 'Boolean',
+            'Date', 'DateTime', 'Time', 'Blob', 'Id', 'Object',
+            'List', 'Set', 'Map', 'System', 'Test', 'Database',
+            'Schema', 'Exception', 'HttpRequest', 'HttpResponse'
+        ];
+
+        if (apexTypes.includes(typeName)) {
+            return false;
+        }
+
+        // Standard objects and custom objects
+        const standardObjects = [
+            'Account', 'Contact', 'Lead', 'Opportunity', 'Case',
+            'Task', 'Event', 'User', 'Profile', 'PermissionSet',
+            'RecordType', 'ContentVersion', 'ContentDocument'
+        ];
+
+        // Include standard objects and anything ending with __c (custom object)
+        return standardObjects.includes(typeName) || typeName.endsWith('__c');
+    }
+
+    /**
+     * Generates metadata XML for the factory class
+     * @param {string} className - Name of the factory class
+     * @returns {string} Metadata XML content
+     */
+    generateMetadataXml(className) {
+        return `<?xml version="1.0" encoding="UTF-8"?>
 <ApexClass xmlns="http://soap.sforce.com/2006/04/metadata">
-    <apiVersion>${process.env.SF_API_VERSION || "60.0"}</apiVersion>
+    <apiVersion>${process.env.SF_API_VERSION || '60.0'}</apiVersion>
     <status>Active</status>
 </ApexClass>`;
-  }
+    }
 
-  /**
-   * Generates a comprehensive test data setup helper
-   * @returns {Object} {className, code, metadata}
-   */
-  generateTestDataSetupHelper() {
-    const className = "TestDataSetup";
-    const code = `/**
+    /**
+     * Generates a comprehensive test data setup helper
+     * @returns {Object} {className, code, metadata}
+     */
+    generateTestDataSetupHelper() {
+        const className = 'TestDataSetup';
+        const code = `/**
  * Test Data Setup Helper
  * Provides common test data setup scenarios
  * Generated by Salesforce Autonomous Dev System
@@ -582,8 +543,8 @@ public class TestDataSetup {
     }
 }`;
 
-    const metadata = this.generateMetadataXml(className);
+        const metadata = this.generateMetadataXml(className);
 
-    return { className, code, metadata };
-  }
+        return { className, code, metadata };
+    }
 }

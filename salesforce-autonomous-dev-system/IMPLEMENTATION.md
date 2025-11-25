@@ -4,13 +4,11 @@
 **Status:** Phase 1 & 2 Complete - Production Ready
 
 ## Overview
-
 This guide provides step-by-step instructions for setting up and running the Autonomous Salesforce Development System on Windows. This system provides AI-powered Salesforce development automation including code analysis, test generation, and autonomous improvements.
 
 ## What's Currently Implemented ✅
 
 ### ✅ Phase 1: Core Infrastructure (COMPLETE)
-
 - Salesforce authentication and connection management
 - JSForce + Salesforce CLI integration
 - AI integration (Claude Sonnet 4 via Anthropic SDK v0.27.0)
@@ -20,7 +18,6 @@ This guide provides step-by-step instructions for setting up and running the Aut
 - Deployment pipeline with safety checks
 
 ### ✅ Phase 2: Batch Org Analysis (COMPLETE)
-
 - Full org codebase analysis
 - Test coverage analyzer
 - Security vulnerability scanner
@@ -30,7 +27,6 @@ This guide provides step-by-step instructions for setting up and running the Aut
 - **Commands:** `npm run batch:analyze`, `npm run batch:analyze-deep`
 
 ### ✅ Phase 3: Test Improvement System (COMPLETE)
-
 - Test quality analyzer (0-100 scoring)
 - Mock framework generator
 - Test data factory generator
@@ -40,14 +36,12 @@ This guide provides step-by-step instructions for setting up and running the Aut
 - **Commands:** `npm run test:comprehensive`, `npm run test:improve`, `npm run test:generate`
 
 ### ✅ Phase 4: Apex Improvement Demo (COMPLETE)
-
 - Autonomous Apex class improvement
 - Code analysis and optimization
 - Auto-deployment to sandbox
 - **Command:** `npm run demo:apex-improvement`
 
 ### ✅ Safety Measures (COMPLETE)
-
 - 4-layer deployment protection
 - Devin1 sandbox enforcement
 - Production deployment blocking
@@ -56,19 +50,16 @@ This guide provides step-by-step instructions for setting up and running the Aut
 ## What's NOT Yet Implemented ❌
 
 ### ❌ Interactive Web Server
-
 - Web interface on localhost:3000
 - REST API for task submission
 - Real-time monitoring dashboard
 
 ### ❌ Task Queue System
-
 - Multi-task queue management
 - Priority-based task scheduling
 - Background processing
 
 ### ❌ Production Deployment Automation
-
 - Automated production deployment
 - Change set generation
 - Rollback capabilities
@@ -78,7 +69,6 @@ These are planned for future phases.
 ## Recent Updates 🔄
 
 ### January 24, 2025: SDK Modernization
-
 - **Updated Anthropic SDK**: v0.20.1 → v0.27.0
 - **Prompt Caching**: All 6 AI service calls now use prompt caching (50-90% cost reduction)
 - **Structured Outputs**: Implemented zod schemas for reliable JSON parsing
@@ -102,20 +92,17 @@ git --version
 ```
 
 If any are missing, install them:
-
 - Node.js: Download from https://nodejs.org/ (LTS version)
 - Git: Download from https://git-scm.com/download/win
 
 ## Phase 1: Initial Setup (15 minutes)
 
 ### Step 1.1: Navigate to Repository
-
 ```powershell
 cd salesforce-org-analysis
 ```
 
 ### Step 1.2: Install Salesforce CLI
-
 ```powershell
 # Install Salesforce CLI via npm
 npm install -g @salesforce/cli@latest
@@ -127,21 +114,18 @@ sf --version
 Expected output: Should show Salesforce CLI version 2.x.x
 
 ### Step 1.3: Install Project Dependencies
-
 ```powershell
 # Install all npm dependencies
 npm install
 ```
 
 ### Step 1.4: Configure Environment Variables
-
 ```powershell
 # Create .env file if it doesn't exist
 notepad .env
 ```
 
 Add these **required** values to .env:
-
 ```env
 # Required - Anthropic API key for Claude Sonnet 4
 ANTHROPIC_API_KEY=<your_anthropic_api_key>
@@ -162,7 +146,6 @@ ANTHROPIC_MODEL=claude-sonnet-4-20250514
 ## Phase 2: Salesforce Authentication (10 minutes)
 
 ### Step 2.1: Authenticate to Salesforce
-
 ```powershell
 # Authenticate to production org (for metadata reading & analysis)
 sf org login web --alias production --instance-url https://login.salesforce.com
@@ -174,7 +157,6 @@ sf org login web --alias Devin1 --instance-url https://test.salesforce.com
 **Important:** The system is configured to ONLY deploy to Devin1 sandbox for safety.
 
 ### Step 2.2: Verify Authentication
-
 ```powershell
 # List authenticated orgs
 sf org list
@@ -188,7 +170,6 @@ Expected: Should see both 'production' and 'Devin1' orgs listed and authenticate
 ## Phase 3: Verify System Setup (5 minutes)
 
 ### Step 3.1: Verify Installation
-
 ```powershell
 # Check that all NPM scripts are available
 npm run --list
@@ -198,7 +179,6 @@ sf org list
 ```
 
 Expected output should include:
-
 - `batch:analyze`
 - `batch:analyze-deep`
 - `test:comprehensive`
@@ -207,7 +187,6 @@ Expected output should include:
 - `demo:apex-improvement`
 
 ### Step 3.2: Test Salesforce Connection
-
 ```powershell
 # Quick connection test
 sf apex run --target-org Devin1 --file-content "System.debug('Connection test');"
@@ -216,14 +195,12 @@ sf apex run --target-org Devin1 --file-content "System.debug('Connection test');
 Expected: Should execute without errors
 
 ### Step 3.3: Run Initial Org Analysis (Optional)
-
 ```powershell
 # Run quick analysis of 20 classes
 npm run batch:quick
 ```
 
 This will:
-
 1. Connect to production org
 2. Analyze 20 classes
 3. Generate analysis report
@@ -233,14 +210,12 @@ Expected: Report saved to `./analysis/org-analysis-report.md`
 ## Phase 4: Running Org Analysis (2-3 hours for full org)
 
 ### Step 4.1: Quick Analysis (Testing - 5 minutes)
-
 ```powershell
 # Analyze first 20 classes (fast, for testing)
 npm run batch:quick
 ```
 
 **What this does:**
-
 - Analyzes 20 classes from your org
 - Scores each class (0-100)
 - Identifies improvement opportunities
@@ -250,7 +225,6 @@ npm run batch:quick
 **Output:** `./analysis/org-analysis-report.md`
 
 ### Step 4.2: Full Org Analysis (Production - 2-3 hours)
-
 ```powershell
 # Analyze ALL custom classes (metadata only - fast)
 npm run batch:analyze
@@ -260,7 +234,6 @@ npm run batch:analyze-deep
 ```
 
 **What this does:**
-
 - Analyzes ALL custom classes (~141 classes)
 - Fetches test coverage data
 - Scans for security vulnerabilities
@@ -269,13 +242,11 @@ npm run batch:analyze-deep
 - Generates comprehensive report
 
 **Output:**
-
 - `./analysis/org-analysis-report.md` - Human-readable report
 - `./analysis/org-analysis-data.json` - Detailed JSON data
 - `./analysis/progress.json` - Progress tracking (can resume)
 
 ### Step 4.3: Review Analysis Results
-
 ```powershell
 # View the report
 type analysis\org-analysis-report.md
@@ -285,7 +256,6 @@ code analysis\org-analysis-report.md
 ```
 
 **Key metrics in report:**
-
 - Org health score (0-100)
 - Test coverage percentage
 - Classes needing improvement
@@ -295,14 +265,12 @@ code analysis\org-analysis-report.md
 ## Phase 5: Apex Improvement Demo (15-20 minutes)
 
 ### Step 5.1: Run the Demo
-
 ```powershell
 # Execute the autonomous Apex improvement demo
 npm run demo:apex-improvement
 ```
 
 **What this does:**
-
 1. Scans org for Apex classes
 2. Identifies a low-risk improvement target
 3. Analyzes code with AI
@@ -311,7 +279,6 @@ npm run demo:apex-improvement
 6. Generates detailed report
 
 **Expected output:**
-
 ```
 ╔══════════════════════════════════════════════════════╗
 ║     Autonomous Apex Improvement Demo                ║
@@ -340,7 +307,6 @@ Report saved to: ./output/demo-apex-improvement/report.md
 ```
 
 ### Step 5.2: Verify Demo Results
-
 ```powershell
 # View the improvement report
 type output\demo-apex-improvement\report.md
@@ -354,14 +320,12 @@ sf apex get class -n LeadTriggerHelper --target-org Devin1
 ## Phase 6: Test Improvement System (2-3 hours for full org)
 
 ### Step 6.1: Analyze Test Quality (Safe - No Changes)
-
 ```powershell
 # Analyze all test classes without making changes
 npm run test:analyze
 ```
 
 **What this does:**
-
 - Analyzes ALL test classes in org
 - Scores each test 0-100 across 7 dimensions
 - Identifies critical issues (System.assert(true), missing bulk tests, etc.)
@@ -371,7 +335,6 @@ npm run test:analyze
 **Output:** Quality scores and recommendations
 
 ### Step 6.2: Improve Existing Tests
-
 ```powershell
 # Refactor existing test classes with best practices
 npm run test:improve
@@ -381,7 +344,6 @@ node demos/test-improvement-demo.js --mode=improve --class=LeadTriggerHandlerTes
 ```
 
 **What this does:**
-
 - Analyzes test quality
 - Refactors bad practices (System.assert(true) → meaningful assertions)
 - Adds bulk testing (200+ records)
@@ -393,7 +355,6 @@ node demos/test-improvement-demo.js --mode=improve --class=LeadTriggerHandlerTes
 **Output:** `./output/test-improvements/`
 
 ### Step 6.3: Generate New Tests for Coverage Gaps
-
 ```powershell
 # Generate new test classes for classes with low/no coverage
 npm run test:generate
@@ -403,7 +364,6 @@ node demos/test-improvement-demo.js --mode=generate --target-coverage=90
 ```
 
 **What this does:**
-
 - Identifies classes with low coverage
 - Generates new test classes from scratch
 - Achieves 100% coverage (or target %)
@@ -413,21 +373,18 @@ node demos/test-improvement-demo.js --mode=generate --target-coverage=90
 **Output:** New test classes in `./output/test-improvements/`
 
 ### Step 6.4: Comprehensive Test Overhaul (RECOMMENDED)
-
 ```powershell
 # Run both improve + generate in one command
 npm run test:comprehensive
 ```
 
 **What this does:**
-
 1. **Phase 1:** Improves ~31 existing test classes
 2. **Phase 2:** Generates ~38 new test classes
 3. **Phase 3:** Deploys all ~69 tests to Devin1
 4. **Phase 4:** Generates comprehensive reports
 
 **Expected Impact:**
-
 - Org coverage: 79% → 90-95%
 - Test quality: Average 15-30 → 80-90
 - All 38 blocking classes now deployable
@@ -436,7 +393,6 @@ npm run test:comprehensive
 **Output:** `./output/test-improvements/comprehensive-test-report.json`
 
 ### Step 6.5: Review Test Improvements
-
 ```powershell
 # View generated test code
 type output\test-improvements\LeadTriggerHandlerTest.cls
@@ -449,7 +405,6 @@ sf apex run test --target-org Devin1 --code-coverage
 ```
 
 **Best Practices Applied:**
-
 - ✅ Bulk testing (200+ records)
 - ✅ Meaningful assertions with messages
 - ✅ Test.startTest/stopTest
@@ -464,9 +419,7 @@ sf apex run test --target-org Devin1 --code-coverage
 ### Common Issues and Solutions
 
 #### Issue: "ANTHROPIC_API_KEY not found"
-
 **Solution:**
-
 ```powershell
 # Ensure .env file exists and contains the key
 type .env | findstr ANTHROPIC_API_KEY
@@ -477,9 +430,7 @@ notepad .env
 ```
 
 #### Issue: "Cannot connect to Salesforce"
-
 **Solution:**
-
 ```powershell
 # Re-authenticate to Devin1
 sf org logout --target-org Devin1
@@ -491,9 +442,7 @@ sf org login web --alias production --instance-url https://login.salesforce.com
 ```
 
 #### Issue: "Deployment failed" or "Target org not found"
-
 **Solution:**
-
 ```powershell
 # Verify Devin1 is authenticated
 sf org display --target-org Devin1
@@ -506,7 +455,6 @@ npm run logs
 ```
 
 #### Issue: "DEPLOYMENT BLOCKED: appears to be production org"
-
 **Solution:**
 This is a **safety feature**. The system only allows deployments to whitelisted sandboxes.
 
@@ -516,14 +464,11 @@ node demos/test-improvement-demo.js --mode=analyze --target-org=Devin1
 ```
 
 If you need to add a different sandbox, edit:
-
 - `src/services/salesforce-manager.js` (line ~18)
 - `src/services/deployment-pipeline.js` (line ~16)
 
 #### Issue: "Module not found" or import errors
-
 **Solution:**
-
 ```powershell
 # Reinstall dependencies
 npm install
@@ -534,9 +479,7 @@ npm install
 ```
 
 #### Issue: Analysis or test generation taking too long
-
 **Solution:**
-
 ```powershell
 # Check progress file
 type analysis\progress.json
@@ -575,7 +518,6 @@ npm run demo:apex-improvement
 ## Quick Reference - All Available Commands
 
 ### Org Analysis
-
 ```powershell
 npm run batch:quick           # Analyze 20 classes (fast test)
 npm run batch:analyze         # Analyze all classes (metadata only)
@@ -583,7 +525,6 @@ npm run batch:analyze-deep    # Deep analysis with code content
 ```
 
 ### Test Improvement
-
 ```powershell
 npm run test:analyze          # Analyze test quality (no changes)
 npm run test:improve          # Improve existing tests + deploy
@@ -592,19 +533,16 @@ npm run test:comprehensive    # Full test overhaul (RECOMMENDED)
 ```
 
 ### Apex Improvement
-
 ```powershell
 npm run demo:apex-improvement # Demo autonomous Apex improvement
 ```
 
 ### Utilities
-
 ```powershell
 npm run logs                  # View system logs
 ```
 
 ### Advanced Options
-
 ```powershell
 # Improve specific test class
 node demos/test-improvement-demo.js --mode=improve --class=YourTestClass
@@ -622,7 +560,6 @@ node demos/batch-analyzer.js --limit 50
 ## Success Criteria
 
 ✅ **Phase 1-4 Complete** when:
-
 - [x] All npm packages installed
 - [x] Salesforce authentication working (production + Devin1)
 - [x] ANTHROPIC_API_KEY configured
@@ -634,7 +571,6 @@ node demos/batch-analyzer.js --limit 50
 ## Current System Status
 
 ### ✅ Implemented & Working
-
 1. **Batch Org Analysis** - Analyzes all classes, generates reports
 2. **Test Improvement System** - Refactors/generates tests, 79%→90% coverage
 3. **Apex Improvement Demo** - Autonomous code improvement
@@ -643,7 +579,6 @@ node demos/batch-analyzer.js --limit 50
 6. **Comprehensive Reporting** - JSON + Markdown reports
 
 ### ❌ Not Yet Implemented
-
 1. **Interactive Web Server** - localhost:3000 interface
 2. **Task Queue System** - Background processing
 3. **Production Deployment** - Automated prod deployment
@@ -652,21 +587,16 @@ node demos/batch-analyzer.js --limit 50
 ## Next Steps & Recommendations
 
 ### Immediate Actions
-
 1. **Run Full Org Analysis**
-
    ```powershell
    npm run batch:analyze-deep
    ```
-
    Review: `./analysis/org-analysis-report.md`
 
 2. **Run Test Improvement**
-
    ```powershell
    npm run test:comprehensive
    ```
-
    Expected: Coverage 79% → 90%+
 
 3. **Validate Results**
@@ -675,7 +605,6 @@ node demos/batch-analyzer.js --limit 50
    ```
 
 ### Future Enhancements
-
 1. **Parallel Processing** (for Opus to design)
    - Multi-agent worker pool
    - Concurrent test generation
@@ -699,7 +628,6 @@ node demos/batch-analyzer.js --limit 50
 ## Documentation
 
 For detailed guides, see:
-
 - **TEST-IMPROVEMENT-GUIDE.md** - Complete test system usage
 - **TEST-SYSTEM-COMPLETE.md** - System architecture & overview
 - **DEPLOYMENT-SAFETY.md** - Safety measures & validation
@@ -713,7 +641,6 @@ For detailed guides, see:
 **Implementation Status:** ✅ **Phases 1-4 COMPLETE**
 
 **What Works:**
-
 - ✅ Full org analysis (batch:analyze-deep)
 - ✅ Test improvement system (test:comprehensive)
 - ✅ Apex improvement demo (demo:apex-improvement)
@@ -722,7 +649,6 @@ For detailed guides, see:
 - ✅ Comprehensive reporting
 
 **What's Next:**
-
 - ❌ Parallel processing (Phase 5 - for Opus)
 - ❌ Production deployment automation (Phase 6)
 - ❌ Web interface (Future)
@@ -731,7 +657,6 @@ For detailed guides, see:
 **Time to Run Full Analysis:** ~2-3 hours (batch:analyze-deep + test:comprehensive)
 
 **Support:**
-
 - Logs: `./logs/` directory
 - Progress: `./analysis/progress.json` and `./output/test-improvements/progress.json`
 - Documentation: See guides listed above
